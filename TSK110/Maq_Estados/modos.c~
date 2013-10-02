@@ -1,0 +1,1540 @@
+/************************************************************************************************************
+ *																											*
+ * 	Archivo : modos.c																						*
+ *																											*
+ * 	Descripción: máquina de estados para el cambio de modos de funcionamiento del TSK100					
+ *
+ * 				 (ver archivo "TSK100-DiagramadeEstados.pdf")												*
+ *																											*
+ * 	Autor : ROUX, Federico G. (rouxfederico@gmail.com)														*
+ *																											* 
+ * 	NEROX 11/2011																							*
+ *																											* 
+ ************************************************************************************************************/
+
+/************************************************************************************************************
+ * 						Inclusión de archivos						*
+ ************************************************************************************************************/
+
+#include <msp430f5529.h>
+
+#include <stdint.h>
+#include <modos.h>
+#include <strbus.h>
+ 
+#include <flash_mapeo_variables.h>
+
+#include <HAL_RTC.h>
+
+#include <cadenas_comunicacion_externo.h>
+
+#include <Temperatura.h>
+#include <Conductividad.h>
+
+#include <SD_Card.h>
+#include <log.h>
+
+#include <uart.h>
+#include <Timer_A2.h>
+
+/************************************************************************************************************
+ * 											Prototipos de funciones											*
+ ************************************************************************************************************/
+
+///////////////////////////////////////////// Funciones Privadas ////////////////////////////////////////////
+inline int Leer_y_Enviar_Hora_y_Fecha(void);
+inline int Leer_y_Enviar_Conductividad(void);
+inline int Leer_y_Enviar_ADC_Temperatura(void);
+inline int Leer_y_Enviar_Mediciones(void);
+inline int Enviar_Lista_Archivos_Log(void);
+inline int Init_Enviar_Lista_Archivos_Log(void);
+inline int Leer_DWord_Entrante(T_Modbus *ch_in);
+inline int Leer_Words_Entrantes(T_Modbus* ch_in);
+///////////////////////////////////////////// Funciones globales ////////////////////////////////////////////
+int Extraer_Nombre_de_Archivo(int8_t ind_arch, char* array_dst, const uint8_t* path);
+int Modos_Inicializar(void);
+int Modos_Maq_Estados(void);
+//////////////////////////////////////////// Precalibración Master //////////////////////////////////////////
+int Precalibracion_Master(void); 
+int Precalibracion_Slave(void);
+
+/************************************************************************************************************
+ * 						Variables globales						*
+ ************************************************************************************************************/
+
+const char variables_validas[CANT_VARIABLES_VALIDAS] = {'T', 'K'};					// Recibo conductividad o temperatura
+const char parametros_validos[CANT_PARAMETROS_VALIDOS] = {'P', 'O', 'V'};				// Recibo pendiente, offset o valor
+
+int32_t Pendiente_Resistencia_tmp;									// Valor de la pendiente temporal, antes de confirmar la calibración
+int32_t Offset_Resistencia_tmp;									// Valor del offset de la conversión, antes de confirmar la calibración
+
+int32_t Pendiente_Conductividad_tmp;									// Valor temporal de la pendiente de conductividad
+int32_t Offset_Conductividad_tmp;																	// Valor temporal del offset de conductividad
+
+T_Modo_Envio_Datos modo_envio_T;									// variable que envío al mandar los datos
+T_Modo_Envio_Datos modo_envio_K;									// variable que envío al mandar los datos
+
+int8_t ind_archivo = 0;											// Indice del nombre de archivo que estoy enviando
+uint8_t ind_acumulado = 0;										// Indice para recorrer el array de nombres
+
+uint8_t hour_tmp = 0;											// Variable temporal para guardar la hora recibida del sistema	
+uint8_t min_tmp = 0;											// idem minuto
+uint8_t sec_tmp = 0;											// idem segundo
+
+uint8_t day_tmp = 0;											// idem día
+uint8_t mon_tmp = 0;											// idem mes
+uint16_t year_tmp = 0;											// idem año
+
+T_Modo_Envio_Datos modo_enviar_f_y_h = ENVIAR_FECHA;							// alterna entre envío de fecha y de hora
+
+/************************************************************************************************************
+ * 											Implementación de funciones										*
+ ************************************************************************************************************/
+
+/************************************************************************************************************
+ * @brief  	Inicialización de la máquina de estados Modos							*
+ * 														*
+ * @param 	none												*
+ * 														*   
+ * @return	0 -> success											*
+ ************************************************************************************************************/
+
+int Modos_Inicializar(void)
+{
+	// RecuperarVariablesFlash();
+	
+	// if(Pendiente_Resistencia < 0)
+	// 	Precalibracion_Master();
+	
+	terminal.modos_estado = CONFIGURACION;
+	
+	return 0;	
+}
+
+/************************************************************************************************************
+ * @brief  	Máquina de Estados Modos.																		*
+ * 																											*
+ * @param 	none																							*
+ * 																											*
+ * @return	0 -> success																					*
+ ************************************************************************************************************/
+
+#define FLAG_AUX_ESPERAR_ANTES_DE_DESCARGAR		0x55
+ 
+int Modos_Maq_Estados(void)
+{
+	uint8_t flag_aux;
+	
+	switch(terminal.modos_estado)
+	{
+	case CONFIGURACION:
+	
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )							// Para cambiar de estado:
+		{
+			if(terminal.Comando == MODOS_CMD_INIT_MASTER)
+			{						
+				////////////////////////////////////////////////////////////////////////
+				// 		* Envio INIT_MEDICION_S por (T2)			//
+				// 		* Inicializo SD						//
+				// 		* Empiezo a mandar por pantalla. Inicializar?		//
+				////////////////////////////////////////////////////////////////////////
+
+				terminal.modos_estado = MASTER_ESPERA_SLAVE;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				
+				Activar_Timeout_Slave();						// Empieza la cuenta de timeout, señalizo Slave = vivo
+				canal_tx_2.respuesta = RESPONDER_INIT_MEDICION_S;
+			}
+			else if(terminal.Comando == MODOS_CMD_INIT_MEDICION_S)				// Recibo éste comando por R1 desde el Master. "q haces, master! ;)"
+			{
+				////////////////////////////////////////////////////////////////////////
+				// 		* Inicializo el RTC como trigger para medición		//
+				//		* Respondo al master que se empezó la medición		//
+				////////////////////////////////////////////////////////////////////////
+				terminal.Ts = TS_MODO_MEDIR;
+				terminal.modos_estado = SLAVE_MIDE;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				RTCCTL0 = RTCRDYIE + RTCTEVIE;	        								// Habilito la ISR del RTC
+				terminal.medicion = TERMINAL_LIBRE;										// La terminal está libre para medir
+			}
+			else if(terminal.Comando == MODOS_CMD_INIT_DESCARGA)
+			{
+				terminal.modos_estado = DATOS_DISPONIBLES;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				
+				GetDirectory(root);														// Llamo a GetDirectory() que me de todo lo que hay en Log_Datos, así lo puedo mandar como respuesta.
+				Init_Enviar_Lista_Archivos_Log();										// Inicializo el índice para mandar los nombres
+			}
+			else if(terminal.Comando == MODOS_CMD_INIT_CALIBRACION_K)
+			{
+				terminal.Ts	= TS_MODO_CALIBRACION_K;									// Seteo el tiempo de adquisición
+				modo_envio_K = ENVIAR_PENDIENTE; 										// Empiezo mandando la pendiente, offset y después datos
+				terminal.modos_estado = CALIBRACION_K;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				terminal.medicion = TERMINAL_LIBRE;										// La terminal está libre para medir
+				RTCCTL0 |= RTCRDYIE + RTCTEVIE;         								// Enable interrupt
+			}
+			else if(terminal.Comando == MODOS_CMD_INIT_CALIBRACION_T)
+			{
+				terminal.Ts	= TS_MODO_CALIBRACION_T;									// Seteo el tiempo de adquisición
+				modo_envio_T = ENVIAR_PENDIENTE; 										// Empiezo mandando la pendiente, offset y después datos
+				terminal.modos_estado = CALIBRACION_T;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				terminal.medicion = TERMINAL_LIBRE;										// La terminal está libre para medir
+				RTCCTL0 |= RTCRDYIE + RTCTEVIE;         								// Enable interrupt
+			}
+			else if(terminal.Comando == MODOS_CMD_INIT_SETEAR_F_Y_H)
+			{
+				terminal.modos_estado = RECIBE_HORA;									// La terminal esta lista para recibir seteo de hora y fecha
+				terminal.Estado_Comando = COMANDO_LIBRE;								// Libero el comando
+			}
+			else if(terminal.Comando == MODOS_CMD_RECIBIR_ALARMA)
+			{
+				terminal.modos_estado = RECIBE_ALARMA;									// La terminal esta lista para recibir seteo de hora y fecha
+				terminal.Estado_Comando = COMANDO_LIBRE;								// Libero el comando
+			}
+			else if(terminal.Comando == MODOS_CMD_RECIBIR_UMBRAL)
+			{
+				terminal.modos_estado = RECIBE_UMBRAL;									// La terminal esta lista para recibir seteo de hora y fecha
+				terminal.Estado_Comando = COMANDO_LIBRE;								// Libero el comando
+			}
+			else if(terminal.Comando == MODOS_CMD_INI_REPETIDOR)
+			{	
+				terminal.modos_estado = MASTER_REPETIDOR;								// La terminal esta lista para recibir seteo de hora y fecha
+				terminal.Estado_Comando = COMANDO_LIBRE;								// Libero el comando
+			}
+			else if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)
+			{
+				terminal.modos_estado = CONFIGURACION;
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+			}
+			else
+			{						
+				terminal.modos_estado = CONFIGURACION;
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				return MODOS_RET_UBIC;
+			}
+		}
+		else
+		{			
+			if((terminal.estado_com == TERMINAL_CONECTADA)&&(canal_tx_0.respuesta == NO_RESPONDER))	
+				Leer_y_Enviar_Hora_y_Fecha();	// Envío hora y fecha e info del equipo.
+		}		
+		break;
+		
+	case MASTER_ESPERA_SLAVE:
+	
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )									// Para cambiar de estado:
+		{
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)
+			{
+				terminal.modos_estado = CONFIGURACION;
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				// Escribir_Word_en_Flash(terminal.modos_estado, MODO_ESTABLECIDO_ADDRESS);	// El cambio al modo "CONFIGURACION" lo guardo en flash			
+			}
+			else if(terminal.Comando == MODOS_CMD_INIT_MEDICION_M)							// Este comando lo recibo por R2, desde el slave.
+			{
+				Activar_Timeout_Slave();													// Empieza la cuenta de timeout, señalizo Slave = vivo
+				terminal.modos_estado = MASTER_MIDE;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+			}
+			else
+			{
+				terminal.modos_estado = MASTER_ESPERA_SLAVE;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				Escribir_Word_en_Flash(terminal.modos_estado, MODO_ESTABLECIDO_ADDRESS);	// El cambio al modo "CONFIGURACION" lo guardo en flash
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				return MODOS_RET_UBIC;			
+			}	
+		}
+		else if(timeout_Slave.slave_vivo == FALSE)											// Si paso el Timeout y no recibí nada, 
+		{
+			terminal.modos_estado = MASTER_MIDE;											// Paso automáticamente a Medir autodisparado
+			terminal.Ts = TS_MODO_MEDIR;
+			terminal.Estado_Comando = COMANDO_LIBRE;										// Por las dudas señalizo comando libre
+		}
+		break;
+		
+	case MASTER_MIDE:
+
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )									// Para cambiar de estado:
+		{
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)								// Vuelvo al estado ppal.
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				modo_enviar_f_y_h = ENVIAR_FECHA;			
+			}
+			else if(terminal.Comando ==  MODOS_CMD_FIN_MEDICION_M)							// Este comando lo recibo por R2
+			{
+				terminal.modos_estado = MASTER_ESPERA_SLAVE;
+				terminal.Estado_Comando = COMANDO_LIBRE;	
+			}
+			else if(terminal.Comando ==  MODOS_CMD_DATO)									// Recibo datos por R2
+			{
+				//////////////////////////////////////////////////////////////////////////
+				//				* Hago una medición de T y K							//
+				// 				* Armo cadena con datos recibidos y medido				//
+				//				* Escribo SD con cadena armada							//
+				//				* Mando datos (M) y (S) por (T1)						//
+				//////////////////////////////////////////////////////////////////////////				
+				if(Leer_Words_Entrantes(&canal_rx_2) == 0)
+				{
+					Activar_Timeout_Slave();														// Empieza la cuenta de timeout, señalizo Slave = vivo
+					
+					terminal.medicion = TERMINAL_MEDIR;												// La llegada del dato del esclavo dispara la medición del master
+										
+					conductividadProcesada_recibida_prev = conductividadProcesada_recibida;			// Guardo la conductividad recibida anterior
+					temperaturaProcesada_recibida_prev = temperaturaProcesada_recibida;				// Guardo la temperatura recibida anterior
+					
+					conductividadProcesada_recibida = canal_rx_2.dato_1;							// Guardo la conductividad recibida
+					temperaturaProcesada_recibida = canal_rx_2.dato_2;								// Guardo la temperatura recibida
+					
+					terminal.Estado_Comando = COMANDO_LIBRE;										// Libero la terminal
+				
+					// El resto del trabajo lo hago desde Sensores.c	
+					// Comienzo una cuenta de Timeout
+				}
+				else
+				{
+					// Recibí un dato incorrecto, no hago nada.
+				}
+			}			
+			else
+			{
+				
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+				/*
+				terminal.modos_estado = MASTER_MIDE;
+				terminal.Estado_Comando = COMANDO_LIBRE;	
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				*/
+				return MODOS_RET_UBIC;
+						
+			}	
+		}
+		else if(timeout_Slave.slave_vivo == FALSE)											// Si paso el Timeout y no recibí nada,
+		{
+			// El estado de TERMINAL_MEDIR para disparar la medición se setea en el RTC
+			// terminal.medicion = TERMINAL_MEDIR;											// La llegada del dato del esclavo dispara la medición del master
+					
+			conductividadProcesada_recibida = 0;											// Seteo en cero la medición del slave
+			temperaturaProcesada_recibida = 0;											
+			
+		}		
+		break;
+		
+	case SLAVE_MIDE:
+	
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )									// Para cambiar de estado:
+		{
+		
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				// modo_enviar_f_y_h = ENVIAR_FECHA;
+			}
+			else if(terminal.Comando ==  MODOS_CMD_FIN_MEDICION_S)
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+			}
+			else if(terminal.Comando == MODOS_CMD_INIT_MEDICION_S)							// Recibo éste comando por R1 desde el Master. "q haces, master! ;)"
+			{
+				//////////////////////////////////////////////////////////////////////////////
+				// 			* Inicializo el RTC como trigger para medición					//
+				//			* Respondo al master que se empezó la medición					//
+				//////////////////////////////////////////////////////////////////////////////
+				
+				terminal.modos_estado = SLAVE_MIDE;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				RTCCTL0 = RTCRDYIE + RTCTEVIE;	        									// Habilito la ISR del RTC
+				terminal.medicion = TERMINAL_LIBRE;											// La terminal está libre para medir
+			}
+			else
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				/*
+				terminal.modos_estado = SLAVE_MIDE;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;*/
+				return MODOS_RET_UBIC;			
+			}		
+		}
+		else
+		{
+			Leer_y_Enviar_Mediciones();
+		}
+		break;
+	
+	case DATOS_DISPONIBLES:	
+	
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )								// Para cambiar de estado:
+		{
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;			
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+			}
+			else
+			{
+				terminal.modos_estado = DATOS_DISPONIBLES;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				return MODOS_RET_UBIC;			
+			}		
+		}
+		else
+		{
+			flag_aux = Enviar_Lista_Archivos_Log();										// Envío la lista de archivos encontrado,
+			if(flag_aux == 1)															// quedan más??	
+			{	
+				terminal.modos_estado = PC_RECIBIO_NARCH;								// Paso a esperar la confirmación de la PC
+				terminal.Estado_Comando = COMANDO_LIBRE;								// Libero el comando
+			}
+			else if (flag_aux == 0)														// Mandé todos los nombres de archivo.
+			{
+				terminal.modos_estado = SELECCION_ARCHIVO;								// Paso a esperar la confirmación de la PC
+				terminal.Estado_Comando = COMANDO_LIBRE;								// Libero el comando
+			}
+		}
+		break;
+	
+	case PC_RECIBIO_NARCH:
+		
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )								// Para cambiar de estado:
+		{
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;			
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+			}
+			else if(terminal.Comando == MODOS_CMD_ARCHIVO_OK)
+			{
+				terminal.modos_estado = DATOS_DISPONIBLES;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				// canal_tx_0.respuesta = NO_RESPONDER;									// Como es una confirmación de la PC, no mando respuesta
+			}
+			else
+			{
+				terminal.modos_estado = DATOS_DISPONIBLES;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				return MODOS_RET_UBIC;			
+			}		
+		}
+		break;
+	
+	case SELECCION_ARCHIVO:
+	
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )															// Para cambiar de estado:
+		{
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;		
+				modo_enviar_f_y_h = ENVIAR_FECHA;	
+			}
+			else if(terminal.Comando ==  MODOS_CMD_DATO)
+			{
+				Leer_DWord_Entrante(&canal_rx_0);																	// Si el dato es válido, paso a descargarlo		
+				
+				if(canal_rx_0.Dato > 0)																				// Si el dato es positivo, es para extraer
+				{
+					canal_rx_0.Dato--;																				// Lo vuelvo a referenciar al cero
+				
+					if(Extraer_Nombre_de_Archivo(canal_rx_0.Dato, stream_archivo.fileName,(const uint8_t*)root) == 0)	// Pruebo de extraer el nombre de archivo
+					{
+						Init_Leer_Stream_Archivo();
+						terminal.modos_estado = DESCARGO_DATOS;
+						terminal.Estado_Comando = COMANDO_LIBRE;
+						canal_tx_0.respuesta = RESPONDER_OK;
+						flag_aux = FLAG_AUX_ESPERAR_ANTES_DE_DESCARGAR;
+					}
+					else																								// sino, vuelvo a configuración y mando ERROR
+					{
+						canal_tx_0.respuesta = RESPONDER_ERROR_CMD;														// Error de comando, 
+					}
+				}
+				else if(canal_rx_0.Dato < 0)
+				{
+					canal_rx_0.Dato++;																					// Referencio a cero
+					canal_rx_0.Dato *= -1;
+					
+					if(Extraer_Nombre_de_Archivo(canal_rx_0.Dato, stream_archivo.fileName,(const uint8_t*)root) == 0)	// Pruebo de extraer el nombre de archivo
+					{
+						f_mount(0, &(stream_archivo.fatfs));															// Monto el dispositivo en memoria
+						f_unlink(stream_archivo.fileName);
+						terminal.modos_estado = CONFIGURACION;
+						terminal.Estado_Comando = COMANDO_LIBRE;
+						canal_tx_0.respuesta = RESPONDER_OK;
+					}
+					else																								// sino, vuelvo a configuración y mando ERROR
+					{
+						canal_tx_0.respuesta = RESPONDER_ERROR_CMD;														// Error de comando, 
+					}
+				}
+			}
+			else
+			{
+				terminal.modos_estado = DATOS_DISPONIBLES;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				return MODOS_RET_UBIC;			
+			}		
+		}
+		break;
+	
+	case DESCARGO_DATOS:
+	
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )											// Para cambiar de estado:
+		{
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;			
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+			}
+			else
+			{
+				terminal.modos_estado = DESCARGO_DATOS;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				return MODOS_RET_UBIC;			
+			}	
+		}	
+		else
+		{
+			if(flag_aux == FLAG_AUX_ESPERAR_ANTES_DE_DESCARGAR)										// La 1ra vez espero 1 segundo
+				Timer_A2_Delay(1000, BLOQUEANTE);													// Comienzo la cuenta del delay
+				
+			flag_aux = Leer_Stream_Archivo();														// Guardo la respuesta de la función
+			if(flag_aux == 0)																		// Mandé un frame y falta terminar
+			{
+				terminal.modos_estado = DESCARGO_DATOS;												// Terminé de leer el archivo
+				terminal.Estado_Comando = COMANDO_LIBRE;											// Vuelvo al estado configuración
+				canal_tx_0.respuesta = RESPONDER_FRAME_ARCHIVO;
+			}
+			else if(flag_aux == 2)
+			{
+				terminal.modos_estado = CONFIGURACION;												// Terminé de leer el archivo
+				terminal.Estado_Comando = COMANDO_LIBRE;											// Vuelvo al estado configuración
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+				canal_tx_0.respuesta = RESPONDER_FIN_ARCHIVO;
+			}			
+		}
+		break;
+	
+	case CALIBRACION_K:
+
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )								// Para cambiar de estado:
+		{
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)							// Vuelvo a modo configuración
+			{
+				terminal.modos_estado = CONFIGURACION;							
+				terminal.Estado_Comando = COMANDO_LIBRE;								// Libero el comando de la terminal
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+			}
+			else if(terminal.Comando ==  MODOS_CMD_OK_CALIBRACION_K)					// Finalizó la calibración, espero si hubo éxito o no
+			{
+				terminal.modos_estado = ESPERO_PENDIENTE_K;							
+				terminal.Estado_Comando = COMANDO_LIBRE;							
+				// RTCCTL0 &= ~(RTCRDYIE + RTCTEVIE);         								// Deshabilito la ISR del RTC
+			}	
+			else if(terminal.Comando ==  MODOS_CMD_CANCEL_CALIBRACION_K)				// Calibración cancelada
+			{
+				terminal.modos_estado = CONFIGURACION;									// Vuelvo a configuración
+				terminal.Estado_Comando = COMANDO_LIBRE;								// Libero el comando de la terminal
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+			}
+			else
+			{
+				terminal.Ts	= TS_MODO_CALIBRACION_K;
+				terminal.modos_estado = CALIBRACION_K;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				RTCCTL0 = RTCRDYIE + RTCTEVIE;	         								// Habilito la ISR del RTC
+				return MODOS_RET_UBIC;			
+			}	
+		}
+		else
+		{				
+			RTCCTL0 = RTCRDYIE + RTCTEVIE;	         									// Habilito la ISR del RTC
+			Leer_y_Enviar_Conductividad();												// Mandar medición por puerto serie!!										 			
+		}	
+		break;
+	
+	case ESPERO_PENDIENTE_K:
+	
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )								// Procesar comandos:
+		{
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;			
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+			}
+			else if(terminal.Comando ==  MODOS_CMD_DATO)
+			{
+				if(!Leer_DWord_Entrante(&canal_rx_0))
+				{
+					Pendiente_Conductividad_tmp = canal_rx_0.Dato;
+					terminal.modos_estado = ESPERO_OFFSET_K;
+					terminal.Estado_Comando = COMANDO_LIBRE;	
+					canal_tx_0.respuesta = RESPONDER_OK;				
+				}
+				else
+				{
+					Pendiente_Conductividad_tmp = 0;
+					terminal.modos_estado = CONFIGURACION;
+					terminal.Estado_Comando = COMANDO_LIBRE;	
+					modo_enviar_f_y_h = ENVIAR_FECHA;
+					canal_tx_0.respuesta = RESPONDER_ERROR_DAT;
+				}				
+			}
+			else
+			{
+				terminal.modos_estado = ESPERO_PENDIENTE_K;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				return MODOS_RET_UBIC;			
+			}										
+		}		
+		break;		
+	
+	case ESPERO_OFFSET_K:
+	
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )								// Procesar comandos:
+		{
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;		
+				modo_enviar_f_y_h = ENVIAR_FECHA;	
+			}
+			
+			else if(terminal.Comando ==  MODOS_CMD_DATO)
+			{
+				if(!Leer_DWord_Entrante(&canal_rx_0))
+				{
+					Offset_Conductividad_tmp = canal_rx_0.Dato;
+					terminal.modos_estado = CALIBRACION_K;
+					terminal.Estado_Comando = COMANDO_LIBRE;	
+					canal_tx_0.respuesta = RESPONDER_OK;	
+																
+					Pendiente_Conductividad = Pendiente_Conductividad_tmp;
+					Offset_Conductividad = Offset_Conductividad_tmp;
+				
+					Escribir_DWord_en_Flash(Pendiente_Conductividad, PENDIENTE_CONDUCTIVIDAD_ADDRESS);
+					Escribir_DWord_en_Flash(Offset_Conductividad, OFFSET_CONDUCTIVIDAD_ADDRESS);
+					 
+				}
+				else
+				{
+					Offset_Resistencia_tmp = 0;
+					terminal.modos_estado = CONFIGURACION;
+					terminal.Estado_Comando = COMANDO_LIBRE;	
+					modo_enviar_f_y_h = ENVIAR_FECHA;
+					canal_tx_0.respuesta = RESPONDER_ERROR_DAT;
+				}				
+			}
+			else
+			{
+				terminal.modos_estado = ESPERO_PENDIENTE_T;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				return MODOS_RET_UBIC;			
+			}										
+		}
+			
+		
+		break;
+		
+	case CALIBRACION_T:
+
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )								// Para cambiar de estado:
+		{
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)							// Vuelvo a modo configuración
+			{
+				terminal.modos_estado = CONFIGURACION;							
+				terminal.Estado_Comando = COMANDO_LIBRE;								// Libero el comando de la terminal
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+
+			}
+			else if(terminal.Comando ==  MODOS_CMD_OK_CALIBRACION_T)					// Finalizó la calibración, espero si hubo éxito o no
+			{
+				terminal.modos_estado = ESPERO_PENDIENTE_T;							
+				terminal.Estado_Comando = COMANDO_LIBRE;							
+				// RTCCTL0 &= ~(RTCRDYIE + RTCTEVIE);         								// Deshabilito la ISR del RTC
+			}
+			else if(terminal.Comando ==  MODOS_CMD_CANCEL_CALIBRACION_T)				// Calibración cancelada
+			{
+				terminal.modos_estado = CONFIGURACION;									// Vuelvo a configuración
+				terminal.Estado_Comando = COMANDO_LIBRE;								// Libero el comando de la terminal
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+
+			}
+			else
+			{
+				terminal.Ts	= TS_MODO_CALIBRACION_T;
+				terminal.modos_estado = CALIBRACION_T;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				RTCCTL0 = RTCRDYIE + RTCTEVIE;	         								// Habilito la ISR del RTC
+				return MODOS_RET_UBIC;			
+			}	
+		}
+		else
+		{				
+			RTCCTL0 = RTCRDYIE + RTCTEVIE;	         									// Habilito la ISR del RTC
+			Leer_y_Enviar_ADC_Temperatura();											// Mandar medición por puerto serie!!										 			
+		}	
+		break;
+	
+	case ESPERO_PENDIENTE_T:
+	
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )								// Procesar comandos:
+		{
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;	
+				modo_enviar_f_y_h = ENVIAR_FECHA;		
+			}
+			else if(terminal.Comando ==  MODOS_CMD_DATO)
+			{
+				if(!Leer_DWord_Entrante(&canal_rx_0))
+				{
+					Pendiente_Resistencia_tmp = canal_rx_0.Dato;
+					terminal.modos_estado = ESPERO_OFFSET_T;
+					terminal.Estado_Comando = COMANDO_LIBRE;	
+					canal_tx_0.respuesta = RESPONDER_OK;				
+				}
+				else
+				{
+					Pendiente_Resistencia_tmp = 0;
+					terminal.modos_estado = CONFIGURACION;
+					terminal.Estado_Comando = COMANDO_LIBRE;	
+					modo_enviar_f_y_h = ENVIAR_FECHA;
+					canal_tx_0.respuesta = RESPONDER_ERROR_DAT;
+				}				
+			}
+			else
+			{
+				terminal.modos_estado = ESPERO_PENDIENTE_T;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				return MODOS_RET_UBIC;			
+			}										
+		}
+			
+		
+		break;		
+	
+	case ESPERO_OFFSET_T:
+	
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )												// Procesar comandos:
+		{
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)											// Vuelvo al estado ppal.
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+			}
+			else if(terminal.Comando ==  MODOS_CMD_DATO)												// Recibí un dato
+			{
+				if(!Leer_DWord_Entrante(&canal_rx_0))													// Leo un dato
+				{
+					Offset_Resistencia_tmp = canal_rx_0.Dato;											// Guardo el dato de forma temporal
+					
+					terminal.modos_estado = CALIBRACION_T;												// Vuelvo al estado de calibración
+					terminal.Estado_Comando = COMANDO_LIBRE;											// Despejo el flag de comando
+					canal_tx_0.respuesta = RESPONDER_OK;													// Respondo OK
+					
+					Pendiente_Resistencia  = Pendiente_Resistencia_tmp;									// Guardo los valores temporales en las
+					Offset_Resistencia     = Offset_Resistencia_tmp;									// variables definitivas de calibración
+
+					Escribir_DWord_en_Flash(Pendiente_Resistencia, PENDIENTE_RESISTENCIA_ADDRESS);		// Guardo pendiente en flash	
+					Escribir_DWord_en_Flash(Offset_Resistencia, OFFSET_RESISTENCIA_ADDRESS);			// Guardo offset en flash
+					
+					terminal.Ts	= TS_MODO_CALIBRACION_T;												// Seteo el tiempo de adquisición
+				
+				}
+				else
+				{
+					Offset_Resistencia_tmp = 0;
+					terminal.modos_estado = CONFIGURACION;
+					terminal.Estado_Comando = COMANDO_LIBRE;	
+					modo_enviar_f_y_h = ENVIAR_FECHA;
+					canal_tx_0.respuesta = RESPONDER_ERROR_DAT;
+				}				
+			}
+			else
+			{
+				terminal.modos_estado = ESPERO_PENDIENTE_T;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				return MODOS_RET_UBIC;			
+			}										
+		}
+			
+		
+		break;
+		
+	case RECIBE_HORA:
+	
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )												// Procesar comandos:
+		{
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)											// Vuelvo al estado ppal.
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+			}
+			else if(terminal.Comando ==  MODOS_CMD_DATO)												// Recibí un dato
+			{
+				hour_tmp = canal_rx_0.frame[1];															// Guardo temporalmente la hora
+				min_tmp = canal_rx_0.frame[2];															// idem minuto
+				sec_tmp = canal_rx_0.frame[3]; 															// idem segundo
+				
+				terminal.modos_estado = RECIBE_FECHA;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_OK;
+			}
+			else
+			{
+				terminal.modos_estado = RECIBE_HORA;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				return MODOS_RET_UBIC;			
+			}
+		}
+		break;
+
+	case RECIBE_FECHA:
+	
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )												// Procesar comandos:
+		{
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)											// Vuelvo al estado ppal.
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+			}
+			else if(terminal.Comando ==  MODOS_CMD_DATO)												// Recibí un dato
+			{
+				day_tmp = canal_rx_0.frame[1];															// Guardo temporalmente la hora
+				mon_tmp = canal_rx_0.frame[2];															// idem minuto
+				
+				year_tmp = canal_rx_0.frame[3]; 														// guardo los 2 dígitos más sign. del año
+				year_tmp <<= 8;																			// los corro 2 dígitos hacia la izquierda
+				year_tmp += canal_rx_0.frame[4];														// guardo los dos dígitos más bajos
+				
+				if(!Establecer_Registros_RTC(hour_tmp, min_tmp, sec_tmp, day_tmp, mon_tmp, year_tmp))	// Valido y seteo el valor de los registros
+				{
+					terminal.modos_estado = CONFIGURACION;												// Terminé de setear fecha y hora
+					terminal.Estado_Comando = COMANDO_LIBRE;											// libero el comando
+					modo_enviar_f_y_h = ENVIAR_FECHA;
+					canal_tx_0.respuesta = RESPONDER_OK;
+				}
+				else
+				{
+					terminal.modos_estado = CONFIGURACION;												// Terminé de setear fecha y hora
+					terminal.Estado_Comando = COMANDO_LIBRE;											// libero el comando
+					modo_enviar_f_y_h = ENVIAR_FECHA;
+					canal_tx_0.respuesta = RESPONDER_ERROR_CMD;											// Devuelvo "ERROR DE COMANDO"
+				}
+			}
+			else
+			{
+				terminal.modos_estado = RECIBE_HORA;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				return MODOS_RET_UBIC;			
+			}
+		}
+		break;
+		
+	case RECIBE_ALARMA:
+	
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE)												// Procesar comandos:
+		{
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)											// Vuelvo al estado ppal.
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+			}
+			else if(terminal.Comando ==  MODOS_CMD_DATO)												// Recibí un dato
+			{
+				if(!Leer_DWord_Entrante(&canal_rx_0))													// Leo un dato
+				{
+					if(canal_rx_0.Dato <= 0)															// Pregunto si es un valor de alarma válido
+					{
+						terminal.alarma_activa = 0;														// Alarma inactiva
+						terminal.nivel_alarma = 0;
+						
+					}
+					else
+					{
+						terminal.alarma_activa = 1;														// Activo la alarma
+						terminal.nivel_alarma = (int16_t) canal_rx_0.Dato;								// Seteo el nivel de alarma						
+					}
+					
+					Escribir_Byte_en_Flash(terminal.alarma_activa, ALARMA_ACTIVA_ADDRESS);
+					Escribir_Word_en_Flash(terminal.nivel_alarma, NIVEL_ALARMA_ADDRESS);					
+					
+					canal_tx_0.respuesta = RESPONDER_OK;
+					terminal.modos_estado = CONFIGURACION;
+					terminal.Estado_Comando = COMANDO_LIBRE;
+				}
+				else
+				{
+					terminal.modos_estado = CONFIGURACION;
+					terminal.Estado_Comando = COMANDO_LIBRE;
+					canal_tx_0.respuesta = RESPONDER_ERROR_DAT;											// Señalizo dato erróneo
+				}
+			}
+			else
+			{
+				terminal.modos_estado = RECIBE_HORA;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				return MODOS_RET_UBIC;			
+			}
+		}
+		break;
+		
+	case RECIBE_UMBRAL:
+	
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )												// Procesar comandos:
+		{
+			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)											// Vuelvo al estado ppal.
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+			}
+			else if(terminal.Comando ==  MODOS_CMD_DATO)												// Recibí un dato
+			{
+				if(!Leer_DWord_Entrante(&canal_rx_0))													// Leo un dato
+				{
+					if(canal_rx_0.Dato <= 0)															// Pregunto si es un valor de alarma válido
+					{
+						terminal.modo_diferencial = 0;													// Alarma inactiva
+						terminal.nivel_umbral = 0;														// limpio la variable del nivel de umbral
+						
+					}
+					else
+					{
+						terminal.modo_diferencial = 1;													// Activo el modo diferencial
+						terminal.nivel_umbral = (int16_t)canal_rx_0.Dato;										// Seteo el nivel de alarma						
+					}
+					canal_tx_0.respuesta = RESPONDER_OK;
+					terminal.modos_estado = CONFIGURACION;
+					terminal.Estado_Comando = COMANDO_LIBRE;
+				}
+				else
+				{
+					terminal.modos_estado = CONFIGURACION;
+					terminal.Estado_Comando = COMANDO_LIBRE;
+					canal_tx_0.respuesta = RESPONDER_ERROR_DAT;											// Señalizo dato erróneo
+				}
+			}
+			else
+			{
+				terminal.modos_estado = RECIBE_HORA;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
+				return MODOS_RET_UBIC;			
+			}
+		}
+		break;
+	
+	case MASTER_REPETIDOR:
+	
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )												// Procesar comandos:
+		{
+			if(terminal.Comando ==  MODOS_CMD_FIN_REPETIDOR)											// Vuelvo al estado ppal. la única manera de salir de este modo
+			{
+				terminal.modos_estado = CONFIGURACION;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				modo_enviar_f_y_h = ENVIAR_FECHA;
+			}
+			else if(terminal.Comando == MODOS_CMD_PC_A_SLAVE) 											// Recibí un comando de la PC	
+			{
+				terminal.modos_estado = MASTER_REPETIDOR;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_2.respuesta = RESPONDER_PC_A_SLAVE;
+			}
+			else if(terminal.Comando == MODOS_CMD_SLAVE_A_PC) 											// Recibí un comando del Slave
+			{
+				terminal.modos_estado = MASTER_REPETIDOR;
+				terminal.Estado_Comando = COMANDO_LIBRE;
+				canal_tx_0.respuesta = RESPONDER_SLAVE_A_PC;
+			}
+			
+		}
+		break;
+	}
+	
+	return MODOS_RET_OK;
+	
+}
+
+/************************************************************************************************************
+ * @brief  	Leo la hora y la mando por puerto serie															*
+ *																											* 
+ * @param 	none																							*
+ *																											*   
+ * @return	0 -> no hizo nada																				*
+ * @return  1 -> mandé los datos!																			*
+ ************************************************************************************************************/
+
+inline int Leer_y_Enviar_Hora_y_Fecha(void)
+{
+	T_Bytes_a_Word anio;
+	
+	if((lectura_registros_RTC == FALSE)&&(canal_tx_0.estado_buffer == BUFFER_VACIO))// Espero a que el flag esté en FALSE para poder leer los registros
+	{
+		Leer_Registros_RTC(FALSE);													// Vuelvo a preguntar por los registros
+		
+		if (modo_enviar_f_y_h == ENVIAR_FECHA)
+		{
+			anio.word = RTCYEAR;
+			
+			modo_enviar_f_y_h = ENVIAR_HORA;	
+			
+			cadena_hora[0] = '/';
+			cadena_hora[1] = RTCDAY;												// cargo la hora en el buffer
+			cadena_hora[2] = RTCMON;												// cargo el minuto en el buffer		
+			cadena_hora[3] = anio.bytes[0];											// cargo los segundos en el buffer
+			cadena_hora[4] = anio.bytes[1];											// cargo los segundos en el buffer
+		}
+		else if(modo_enviar_f_y_h == ENVIAR_HORA)
+		{
+			cadena_hora[0] = '-';
+			cadena_hora[1] = hour_BCD;												// cargo la hora en el buffer
+			cadena_hora[2] = min_BCD;												// cargo el minuto en el buffer		
+			cadena_hora[3] = sec_BCD;												// cargo los segundos en el buffer
+			if((hour_BCD == 0x00)&&(min_BCD == 0x00)&&(sec_BCD == 0x00))			// si cambio de dia
+				modo_enviar_f_y_h = ENVIAR_FECHA;									// vuelvo a mandar la fecha
+		}
+		else
+		{
+			modo_enviar_f_y_h = ENVIAR_FECHA;									// vuelvo a mandar la fecha
+		}
+		
+		canal_tx_0.respuesta = RESPONDER_HORA;										// Levanto el flag para responder
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}	
+} 
+
+/************************************************************************************************************
+ * @brief  	Leo la Temperatura y la mando por puerto serie													*
+ *																											* 
+ * @param 	none																							*
+ *																											*   
+ * @return	0 -> no hizo nada																				*
+ * @return  1 -> mandé los datos!																			*
+ ************************************************************************************************************/
+/*
+inline int Leer_y_Enviar_Temperatura(void)
+{
+	T_Bytes_a_Word Temperatura_a_Enviar;
+	
+	if(terminal.medicion == TERMINAL_MIDIENDO)						// Terminó de hacer una medición pero no bajé el flag porque está en modo calibracion T
+	{				
+		terminal.medicion = TERMINAL_LIBRE;							// Seteo la terminal libre para un nuevo conteo del RTC.
+		
+		Temperatura_a_Enviar.word = temperaturaProcesada;
+		
+		cadena_temperatura [CADENA_TEMPERATURA_IND_PARTE_ALTA] = Temperatura_a_Enviar.bytes[1];
+		cadena_temperatura [CADENA_TEMPERATURA_IND_PARTE_BAJA] = Temperatura_a_Enviar.bytes[0];
+		
+		canal_tx_0.respuesta  = RESPONDER_T;
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+*/
+/************************************************************************************************************
+ * @brief  	Leo Resistencia por la entrada de temperatura 													*
+ * @brief 	y la mando por puerto serie																		*
+ * 																											*
+ * @param 	none																							*
+ * 																											*   
+ * @return	0 -> no hizo nada																				*
+ * @return  1 -> mandé los datos!																			*
+ ************************************************************************************************************/
+/*
+inline int Leer_y_Enviar_Resistencia(void)
+{
+	T_Bytes_a_Word Resistencia_a_Enviar;
+	
+	if(terminal.medicion == TERMINAL_MIDIENDO)															// Terminó de hacer una medición pero no bajé el flag porque está en modo calibracion T
+	{				
+		terminal.medicion = TERMINAL_LIBRE;																// Seteo la terminal libre para un nuevo conteo del RTC.
+		Resistencia_a_Enviar.word = Resistencia_Medida;													// Guardo el valor a enviar
+		cadena_resistencia [CADENA_TEMPERATURA_IND_PARTE_ALTA] = Resistencia_a_Enviar.bytes[1];			// Separo la parte baja del dato
+		cadena_resistencia [CADENA_TEMPERATURA_IND_PARTE_BAJA] = Resistencia_a_Enviar.bytes[0];			// de la parte alta (en 2 bytes)
+		canal_tx_0.respuesta  = RESPONDER_R;																// Habilito a mandar valor de resistencia
+		return 1;																						// Aviso que mandé un dato
+	}
+	else
+	{
+		return 0;																						// La función no hizo nada
+	}
+}
+*/
+/************************************************************************************************************
+ * @brief  	Leo y mando el valor de la medición del ADC														*
+ * 																											* 
+ * @param 	none																							*
+ * 																											*   
+ * @return	0 -> no hizo nada																				*
+ * @return  1 -> mandé los datos!																			*
+ ************************************************************************************************************/
+
+inline int Leer_y_Enviar_ADC_Temperatura(void)
+{
+	T_Bytes_a_DWord Dato_a_Enviar;
+	
+	if(terminal.medicion == TERMINAL_MIDIENDO)															// Terminó de hacer una medición pero no bajé el flag porque está en modo calibracion T
+	{				
+		terminal.medicion = TERMINAL_LIBRE;																// Seteo la terminal libre para un nuevo conteo del RTC.
+
+		switch(modo_envio_T)
+		{
+			case ENVIAR_PENDIENTE:
+				cadena_datos[0] = 'p';																	// aclaro que mando la pendiente
+				Dato_a_Enviar.dword = Pendiente_Resistencia;											// Primero mando la pendiente usada para medir resistencia
+				modo_envio_T = ENVIAR_OFFSET;															// Cambio a envío de offset
+				break;
+			case ENVIAR_OFFSET:
+				cadena_datos[0] = 'o';																	// mando el offset
+				Dato_a_Enviar.dword = Offset_Resistencia;												// Segundo, mando el offset
+				modo_envio_T = ENVIAR_TEMPERATURA;														// Por último, mando datos
+				break;
+			case ENVIAR_TEMPERATURA:
+				cadena_datos[0] = 'd';																	// Byte más significativo
+				Dato_a_Enviar.dword = (int32_t)PT100PromedioObtenido;									// Guardo el valor a enviar
+				modo_envio_T = ENVIAR_TEMPERATURA;														// Envío datos hasta que vuelva a inicializarse
+				break;
+			default:
+				break;
+		}
+	
+		cadena_datos[1] = Dato_a_Enviar.bytes[3];														// Byte más significativo
+		cadena_datos[2] = Dato_a_Enviar.bytes[2];														// Byte 2
+		cadena_datos[3] = Dato_a_Enviar.bytes[1];														// Byte 3
+		cadena_datos[4] = Dato_a_Enviar.bytes[0];														// Byte menos significativo
+		canal_tx_0.respuesta  = RESPONDER_DATO;															// Habilito a mandar valor de resistencia
+		return 1;																						// Aviso que mandé un dato
+	}
+	else
+	{
+		return 0;																						// La función no hizo nada
+	}
+}
+
+/************************************************************************************************************
+ * @brief  	Leo conductividad y preparo cadena para enviar por serie										*
+ * 																											* 
+ * @param 	none																							*
+ * 																											*   
+ * @return	0 -> no hizo nada																				*
+ * @return  1 -> mandé los datos!																			*
+ ************************************************************************************************************/
+
+inline int Leer_y_Enviar_Conductividad(void)
+{
+	T_Bytes_a_DWord Calibracion_a_Enviar;																// Para enviar pendiente u offset de calibración
+	
+	if(terminal.medicion == TERMINAL_MIDIENDO)															// Terminó de hacer una medición pero no bajé el flag porque está en modo calibracion T
+	{				
+
+		switch(modo_envio_K)
+		{
+			case ENVIAR_PENDIENTE:
+			
+				cadena_datos[0] = 'p';																	// aclaro que mando la pendiente
+				Calibracion_a_Enviar.dword = Pendiente_Conductividad;									// Primero mando la pendiente usada para medir resistencia
+				
+				cadena_datos[1] = Calibracion_a_Enviar.bytes[3];										// Byte más significativo
+				cadena_datos[2] = Calibracion_a_Enviar.bytes[2];										// Byte 2
+				cadena_datos[3] = Calibracion_a_Enviar.bytes[1];										// Byte 3
+				cadena_datos[4] = Calibracion_a_Enviar.bytes[0];										// Byte menos significativo
+				
+				modo_envio_K = ENVIAR_OFFSET;															// Cambio a envío de offset
+				terminal.medicion = TERMINAL_LIBRE;														// Seteo la terminal libre para un nuevo conteo del RTC.
+				canal_tx_0.respuesta  = RESPONDER_DATO;													// Habilito a mandar valor de resistencia
+				break;
+				
+			case ENVIAR_OFFSET:
+			
+				cadena_datos[0] = 'o';																	// mando el offset
+				Calibracion_a_Enviar.dword = Offset_Conductividad;										// Segundo, mando el offset
+								
+				cadena_datos[1] = Calibracion_a_Enviar.bytes[3];										// Byte más significativo
+				cadena_datos[2] = Calibracion_a_Enviar.bytes[2];										// Byte 2
+				cadena_datos[3] = Calibracion_a_Enviar.bytes[1];										// Byte 3
+				cadena_datos[4] = Calibracion_a_Enviar.bytes[0];										// Byte menos significativo
+				
+				modo_envio_K = ENVIAR_CORRIENTE;														// Por último, mando datos
+				terminal.medicion = TERMINAL_LIBRE;														// Seteo la terminal libre para un nuevo conteo del RTC.
+				canal_tx_0.respuesta  = RESPONDER_DATO;													// Habilito a mandar valor de resistencia
+				break;
+			
+			case ENVIAR_CORRIENTE:
+			
+				if(canal_tx_0.estado_buffer == BUFFER_VACIO)											// Pregunto si la terminal no tiene una respuesta pendiente
+				{
+					cadena_datos[0] = 'i';																// guardo el identificador para enviar un valor de corriente
+					Calibracion_a_Enviar.dword = I_Integral_Media_Onda_Promediado;						// Guardo la integral de la senoidal de media onda
+					
+					cadena_datos[1] = Calibracion_a_Enviar.bytes[3];									// Byte más significativo
+					cadena_datos[2] = Calibracion_a_Enviar.bytes[2];									// Byte 2
+					cadena_datos[3] = Calibracion_a_Enviar.bytes[1];									// Byte 3
+					cadena_datos[4] = Calibracion_a_Enviar.bytes[0];									// Byte menos significativo
+					
+					modo_envio_K = ENVIAR_TENSION;														// Por último, mando datos
+					canal_tx_0.respuesta  = RESPONDER_DATO;												// Habilito a mandar valor de resistencia
+					terminal.medicion = TERMINAL_LIBRE;													// Seteo la terminal libre para un nuevo conteo del RTC.
+				}
+				break;
+			
+			case ENVIAR_TENSION:
+			
+				if(canal_tx_0.estado_buffer == BUFFER_VACIO)											// Pregunto si la terminal no tiene una respuesta pendiente
+				{																			
+					cadena_datos[0] = 'v';																// Guardo el tag para enviar tensión
+					Calibracion_a_Enviar.dword = V_Integral_Media_Onda_Promediado;						// Guardo la integral de la senoidal de media onda
+					
+					cadena_datos[1] = Calibracion_a_Enviar.bytes[3];									// Byte más significativo
+					cadena_datos[2] = Calibracion_a_Enviar.bytes[2];									// Byte 2
+					cadena_datos[3] = Calibracion_a_Enviar.bytes[1];									// Byte 3
+					cadena_datos[4] = Calibracion_a_Enviar.bytes[0];									// Byte menos significativo				
+					
+					modo_envio_K = ENVIAR_TEMPERATURA;													// Por último, mando datos
+					canal_tx_0.respuesta  = RESPONDER_DATO;												// Habilito a mandar valor de resistencia
+					terminal.medicion = TERMINAL_LIBRE;													// Seteo la terminal libre para un nuevo conteo del RTC.
+				}
+				break;
+				
+			case ENVIAR_TEMPERATURA:
+			
+				if(canal_tx_0.estado_buffer == BUFFER_VACIO)											// Pregunto si la terminal no tiene una respuesta pendiente
+				{
+					cadena_datos[0] = 't';																// Guardo el tag para mandar temperatura calibrada
+					Calibracion_a_Enviar.dword = temperaturaProcesada;									// guardo el valor de 32bit de temp. calibrada
+					
+					cadena_datos[1] = Calibracion_a_Enviar.bytes[3];									// Byte más significativo
+					cadena_datos[2] = Calibracion_a_Enviar.bytes[2];									// Byte 2
+					cadena_datos[3] = Calibracion_a_Enviar.bytes[1];									// Byte 3
+					cadena_datos[4] = Calibracion_a_Enviar.bytes[0];									// Byte menos significativo				
+					
+					modo_envio_K = ENVIAR_CORRIENTE;													// Por último, mando datos				
+					canal_tx_0.respuesta  = RESPONDER_DATO;												// Habilito a mandar valor de resistencia
+					terminal.medicion = TERMINAL_LIBRE;													// Seteo la terminal libre para un nuevo conteo del RTC.
+				}
+				break;
+			
+			default:
+				break;
+		}		
+		
+		return 1;																						// Aviso que mandé un dato
+	}
+	else
+	{
+		return 0;																						// La función no hizo nada
+	}
+	
+}
+ 
+/************************************************************************************************************
+ * @brief  	Leo una cadena entrante y extraigo un dato de 32 bits											*	
+ * 																											*
+ * @param 	none 																							*
+ * 																											*   
+ * @return	0 -> extrajo el dato! 																			*	
+ * @return  1 -> error 																						*
+ ************************************************************************************************************/
+
+inline int Leer_DWord_Entrante(T_Modbus *ch_in)
+{
+	T_Bytes_a_DWord dato_a_leer;
+	
+	if(ch_in->frame[LEER_DATO_IDENTIFICADOR_IND] != LEER_DATO_IDENTIFICADOR)		// Chequeo que la cadena empiece con 'd'
+	{
+		ch_in->Dato = 0;															// Sino elimino el dato
+		ch_in->estado_dato = DATO_INVALIDO;											// Señalizo como inválido
+		return 1;																	// Y salgo de la función
+	}
+
+	dato_a_leer.bytes[3] = ch_in->frame[LEER_DATO_BYTE3];							// Si llegué hasta acá, está todo OK. Copio la parte alta del dato
+	dato_a_leer.bytes[2] = ch_in->frame[LEER_DATO_BYTE2];							// Copio la parte alta del dato
+	dato_a_leer.bytes[1] = ch_in->frame[LEER_DATO_BYTE1];							// Copio la parte alta del dato
+	dato_a_leer.bytes[0] = ch_in->frame[LEER_DATO_BYTE0];							// Copio la parte alta del dato
+	
+	ch_in->Dato = (int32_t)dato_a_leer.dword; 										// paso a la variable del canal de recepción.
+	
+	return 0;																		// devuelvo ésito! ;)
+	
+}
+
+/************************************************************************************************************
+ * @brief  	Leo una cadena entrante y extraigo 2 datos de 16 bits c/u										*	
+ * 																											*
+ * @param 	none 																							*
+ * 																											*   
+ * @return	0 -> extrajo el dato! 																			*	
+ * @return  1 -> error 																						*
+ ************************************************************************************************************/
+
+inline int Leer_Words_Entrantes(T_Modbus* ch_in)
+{
+	
+	T_Bytes_a_Word dato_a_leer_1;																	// Primer dato que extraigo
+	T_Bytes_a_Word dato_a_leer_2;																	// Segundo dato que extraigo
+	
+	if(ch_in->frame[LEER_DATO_IDENTIFICADOR_IND] != LEER_DATO_IDENTIFICADOR)						// Chequeo que la cadena empiece con 'd'
+	{
+		ch_in->Dato = 0;																			// Sino elimino el dato
+		ch_in->estado_dato = DATO_INVALIDO;															// Señalizo como inválido
+		return 1;																					// Y salgo de la función
+	}
+
+	dato_a_leer_1.bytes[0] = ch_in->frame[1];														// Si llegué hasta acá, está todo OK. Copio la parte alta del dato 1
+	dato_a_leer_1.bytes[1] = ch_in->frame[2];														// Copio la parte baja del dato 1
+	
+	dato_a_leer_2.bytes[0] = ch_in->frame[3];														// Copio la parte alta del dato 2
+	dato_a_leer_2.bytes[1] = ch_in->frame[4];														// Copio la parte baja del dato 2
+	
+	ch_in->dato_1 = (int16_t)dato_a_leer_1.word; 													// paso a la variable del canal de recepción.
+	ch_in->dato_2 = (int16_t)dato_a_leer_2.word; 													// paso a la variable del canal de recepción.
+	
+	return 0;																						// devuelvo ésito! ;)
+	
+}
+
+/************************************************************************************************************
+ * @brief  	Armo la cadena a enviar a partir de las mediciones.  											*
+ * 																											* 
+ * @param 	none 																							*
+ * 																											*
+ * @return	0 -> extrajo el dato! 																			*
+ * @return  1 -> error 																						*
+ ************************************************************************************************************/
+
+inline int Leer_y_Enviar_Mediciones(void)
+{
+	T_Bytes_a_Word conductividad_a_enviar;
+	T_Bytes_a_Word temperatura_a_enviar;
+	
+	if(terminal.medicion == TERMINAL_MIDIENDO)															// Terminó de hacer una medición pero no bajé el flag porque está en modo calibracion T
+	{
+
+		cadena_datos[0] = 'd';																			// Guardo el tag para enviar tensión
+		
+		conductividad_a_enviar.word = conductividadProcesada;											// Valor calibrado de conductividad
+		temperatura_a_enviar.word = temperaturaProcesada;												// Valor calibrado de temperatura
+		
+		cadena_datos[1] = conductividad_a_enviar.bytes[0];												// Byte más significativo de conductividad
+		cadena_datos[2] = conductividad_a_enviar.bytes[1];												// Byte menos significativo de conductividad
+		
+		cadena_datos[3] = temperatura_a_enviar.bytes[0];												// Byte más significativo de temperatura
+		cadena_datos[4] = temperatura_a_enviar.bytes[1];												// Byte menos significativo de temperatura	
+		
+		canal_tx_0.respuesta = RESPONDER_DATO;
+		terminal.medicion = TERMINAL_LIBRE;
+	}
+	else
+	{
+		return 1;
+	}	
+	
+	return 0;	
+}
+
+/************************************************************************************************************
+ * @brief  	Inicializa los contadores de la función Enviar_Lista_Archivos_Log()								*
+ * 																											* 
+ * @param 	none 																							*
+ * 																											*
+ * @return	0 -> mando todo bien! 																			*
+ * @return  1 -> error 																						*
+ ************************************************************************************************************/
+
+inline int Init_Enviar_Lista_Archivos_Log(void)
+{
+	ind_acumulado = 0;
+	ind_archivo = 0;
+	return 0;
+}
+ 
+/************************************************************************************************************
+ * @brief  	Mando la lista de archivos que se pueden descargar  											*
+ * 																											* 
+ * @param 	none 																							*
+ * 																											*
+ * @return	0 -> mando todo bien! 																			*
+ * @return  1 -> error 																						*
+ ************************************************************************************************************/
+
+inline int Enviar_Lista_Archivos_Log(void)
+{
+	uint8_t* nombre_ptr;																				// Puntero al inicio del nombre de archivo actual
+	uint8_t long_nombre = 0;																			// Longitud del nombre de archivo actual
+	uint8_t i;
+
+	if(canal_tx_0.estado_buffer == BUFFER_VACIO)														// El canal de salida está libre, mandó todos los datos
+	{
+		if(ind_archivo < numNames)
+		{
+			ind_acumulado +=  LONG_SEPARADOR_NOMBRES;													// Posiciono 4 adelante de la última lectura
+			nombre_ptr = ((uint8_t*) &names[ind_acumulado]);											// Puntero donde arranca el frame
+			long_nombre = nameLengths[ind_archivo] - LONG_SEPARADOR_NOMBRES; 							// Longitud del nombre del archivo
+			ind_acumulado += long_nombre;																// Le agrego el largo de la cadena actual para la próx.
+			
+			canal_tx_0.frame[0] = '*';																	// Señalizo que estoy mandando una cadena
+			
+			CopiarArray_8_bits(canal_tx_0.frame + 1, nombre_ptr, long_nombre);							// Copio el nombre del archivo
+			
+			canal_tx_0.respuesta = NO_RESPONDER;														// Señalizo para la función que devuelve los datos
+			canal_tx_0.len_cadena = long_nombre + 1;													// Es un caracter más porque tiene el '*' para señalizar
+			canal_tx_0.ind = 0;																			// Inicializo el índice para recorrer el frame
+			canal_tx_0.estado_buffer = BUFFER_LLENO;													// Señalizo BUFFER_LLENO
+			
+			Iniciar_Transmision_Paquete_UART0(&canal_tx_0);												// Inicio la transmisión del paquete por (T1)
+			ind_archivo++;																				// Incremento para pasar al próximo archivo
+			return 1;
+		}
+		else if(ind_archivo == numNames)
+		{
+			for(i = 0;i < 10;i++)
+				canal_tx_0.frame[i] = '!';																// Señalizo que terminé de mandar cadenas
+			
+			canal_tx_0.respuesta = NO_RESPONDER;														// Señalizo para la función que devuelve los datos
+			canal_tx_0.len_cadena = 10;																	// Es un caracter más porque tiene el '*' para señalizar
+			canal_tx_0.ind = 0;																			// Inicializo el índice para recorrer el frame
+			canal_tx_0.estado_buffer = BUFFER_LLENO;													// Señalizo BUFFER_LLENO
+			
+			Iniciar_Transmision_Paquete_UART0(&canal_tx_0);												// Inicio la transmisión del paquete por (T1)
+			
+			return 0;
+		}
+		else if(ind_archivo > numNames)																	// Pregunto si llegué al final.
+		{
+			return 0;
+		}
+	}	
+	else
+	{
+		
+		return 2;
+	}
+																				 
+	return 0;
+}
+
+/************************************************************************************************************
+ * @brief  	Extraigo un nombre de archivo de la lista general	  											*
+ * 																											* 
+ * @param 	none 																							*
+ * 																											*
+ * @return	0 -> extrajo todo bien! 																		*
+ * @return  1 -> error 																						*
+ ************************************************************************************************************/
+ 
+int Extraer_Nombre_de_Archivo(int8_t ind_arch, char* array_dst, const uint8_t* path)
+{
+	uint8_t* nombre_ptr;																				// Puntero al inicio del nombre de archivo actual
+	uint8_t long_nombre = 0;																			// Longitud del nombre de archivo actual
+	uint8_t len_path = 0;																				// Longitud del nombre de archivo actual	
+	uint8_t i;
+	uint8_t ind_acumulado;
+	
+	if(ind_arch < 0) 																					// Si el índice está fuera de rango
+		return 1;																						// Respondo con error
+	else if (ind_arch > (int8_t) numNames)
+		return 1;
+	else
+	{
+		ind_acumulado =  LONG_SEPARADOR_NOMBRES;														// Posiciono 4 adelante de la última lectura		
+		
+		for(i = 0;i < ind_arch; i++)																	// Recorro los nombres de archivo
+			ind_acumulado +=  nameLengths[ind_arch];													// sumo el largo del nombre actual mas el separador sgte.	
+		
+		nombre_ptr = ((uint8_t*) &names[ind_acumulado]);												// Puntero donde arranca el nombre del archivo
+		long_nombre = nameLengths[ind_arch] - LONG_SEPARADOR_NOMBRES; 									// Longitud del nombre del archivo		
+		len_path = strlen((const char*)path);
+		
+		CopiarArray_8_bits((uint8_t*)array_dst, path, len_path);										// Copio el nombre del archivo
+		array_dst[len_path] = '\\';																		// separo el directorio
+		
+		CopiarArray_8_bits((uint8_t*)array_dst + len_path + 1, nombre_ptr, long_nombre);				// Copio el nombre del archivo
+		array_dst[len_path + long_nombre + 1] = '\0';													// Final de la cadena
+		
+		return 0;	
+	}	
+}
+
+/************************************************************************************************************
+ *	@brief 		Variables de calibración medidas el 09.04.2012, en la placa Master							*
+ * 																											*
+ * 	@params 	none																						*
+ * 																											* 		
+ * 	@returns 	none																						*
+ * 																											*
+ ************************************************************************************************************/
+ 
+int Precalibracion_Master(void)
+{
+	Pendiente_Resistencia = 10524;
+	Offset_Resistencia = 975;
+	Pendiente_Conductividad = 6032;
+	Offset_Conductividad = -2;
+	return 0;
+} 
+
+/************************************************************************************************************
+ *	@brief 		Variables de calibración medidas el 09.04.2012, en la placa Master							*
+ * 																											*
+ * 	@params 	none																						*
+ * 																											* 		
+ * 	@returns 	none																						*
+ * 																											*
+ ************************************************************************************************************/
+
+int Precalibracion_Slave(void)
+{
+	Pendiente_Resistencia = 11453;
+	Offset_Resistencia = 959;
+	Pendiente_Conductividad = 5931;
+	Offset_Conductividad = -2;
+	return 0;
+}
+
+/************************************************************************************************************
+ *		 									Final del Archivo												*
+ ************************************************************************************************************/
