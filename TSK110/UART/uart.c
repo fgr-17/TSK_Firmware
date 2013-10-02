@@ -1,12 +1,12 @@
 /********************************************************************************************************
  *																										*
- * 	Archivo : uart.c																					*
+ * 	@author 	uart.c																					*
  * 																										*
- * 	Descripción: configuración del hardware de comunicación serie.										*
+ * 	@brief 		configuración del hardware de comunicación serie.										*
  * 																										*
- * 	Autor : ROUX, Federico G. (rouxfederico@gmail.com)													*
+ * 	@author		Roux, Federico G. (rouxfederico@gmail.com)												*
  * 																										*
- * 	NEROX 11/2011																						*
+ * 	@date		11/2011																					*
  *																										* 
  ********************************************************************************************************/
 
@@ -17,18 +17,18 @@
 #include <msp430f5529.h>
 #include <stdint.h>
 
-#include <hardware_constantes.h>
-#include <hardware_macros.h>
+#include "Hardware/hardware_constantes.h"
+#include "Hardware/hardware_macros.h"
 
-#include <modos.h>
-#include <strbus.h>
-#include <Timer_A2.h>
-#include <xbob_4.h>
+#include "Maq_Estados/modos.h"
+#include "StrBus/strbus.h"
+#include "Timer_A2/Timer_A2.h"
+#include "XBOB_4/xbob_4.h"
 
-#include <uart.h>
-#include <HAL_RTC.h>
+#include "UART/uart.h"
+#include "F5xx_F6xx_Core_Lib/HAL_RTC.h"
 
-#include <HAL_Board.h>
+#include "MSP-EXP430F5529_HAL/HAL_Board.h"
 
 /********************************************************************************************************
  * 										Prototipos de funciones											*
@@ -45,18 +45,6 @@ int Frame_Timeout_UART1(void);
 /********************************************************************************************************
  * 										Implementación de funciones										*
  ********************************************************************************************************/
-
-int Leer_Dato_Buffer(T_Modbus*canal_rx)
-{
-	uint8_t dato_extraido;
-
-
-
-
-}
-
-
-
 
 
 /********************************************************************************************************
@@ -207,21 +195,20 @@ int Iniciar_Transmision_Paquete_UART1(T_Modbus* ch_out)
 __interrupt void USCI_A0_ISR(void)
 {
 	uint8_t rx;
-	uint8_t i;
-		
+			
 	switch(__even_in_range(UCA0IV,4))
 	{
 	case 0:		                             								// Vector 0 - no interrupt
 		break;
+
 	case 2:                                   								// Vector 2 - RXIFG
 		
 		rx = UCA0RXBUF;														// Leo el byte recibido
 		UCA0IFG = 0;														// Limpio el flag de interrupción pendiente
 		
 		if(canal_rx_0.estado_buffer == BUFFER_LLENO)						// Pregunto si el buffer está lleno
-		{
 			return; 														// Si el buffer está lleno, salgo nomas
-		}
+			
 		else
 		{
 			canal_rx_0.buffer[canal_rx_0.ind_bf] = rx;						// Guardo el dato recibido
@@ -234,54 +221,11 @@ __interrupt void USCI_A0_ISR(void)
 				return;														// Salgo de la interrupción
 			}
 			else
-			{
 				canal_rx_0.estado_buffer = BUFFER_CARGANDO;					// Si no está lleno, señalizo buffer cargando
-			}
 		}
-
-		/*
-		canal_rx_0.estado_buffer_anterior = canal_rx_0.estado_buffer;					// Guardo el estado anterior por las dudas que se pierda el frame
-		canal_rx_0.estado_buffer = BUFFER_CARGANDO;										// al estar escribiendo, pongo en estado libre
-		
-		if(canal_rx_0.ind > canal_rx_0.len_cadena) 
-			canal_rx_0.ind = 0;															// Si me pase del largo del array, inicializo
-						
-		canal_rx_0.frame_temp[canal_rx_0.ind] = rx;										// Escribo en el buffer de recepcion
-
-		canal_rx_0.ind++;																// Incremento el índice del buffer
-		
-		Timer_A2_Delay(1000, NO_BLOQUEANTE);											// Comienzo la cuenta del delay
-				
-		if(canal_rx_0.ind > canal_rx_0.len_cadena - 1)									// Llegué al final del array?
-		{
-			canal_rx_0.ind = 0;															// Inicializo el índice
-			canal_rx_0.estado_buffer = BUFFER_LLENO;									// Queda en estado Leer
-			for(i = 0;i < canal_rx_0.len_cadena; i++)									// Recorro el array temporal
-			{
-				canal_rx_0.frame[i] = canal_rx_0.frame_temp[i]; 						// descargo todo sobre el buffer definitivo
-			} 		
-		}
-		*/
 		break;
 
 	case 4:                             												// Vector 4 - TXIFG
-		/*
-		if(canal_tx_0.estado_buffer == BUFFER_LLENO)									// En caso de que esté el buffer lleno
-		{
-			canal_tx_0.ind++;															// Incremento el índice del array
-			
-			if(canal_tx_0.ind >= canal_tx_0.len_cadena)									// Pregunto si llegué al final de la cadena
-			{
-				canal_tx_0.ind = 0;														// Inicializo el índice del buffer
-				canal_tx_0.estado_buffer = BUFFER_VACIO;								// Señalizo como buffer vacío
-			}
-			else
-			{			
-				UCA0TXBUF = canal_tx_0.frame[canal_tx_0.ind];							// Pongo en el registro el byte a transmitir
-				UCA0IFG = 0;															// Limpio el flag de interrupción pendiente
-			}
-		}*/
-
 		canal_tx_0.dato_pendiente = NO;												// Señalo que ya mande el dato
 		UCA0IFG = 0;																// Limpio el flag de interrupción pendiente
 		break;

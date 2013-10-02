@@ -1,12 +1,12 @@
 /*******************************************************************************************
  *
- * 	Archivo : uart.h
+ * 	@file uart.h
  * 
- * 	Descripción: header del archivo "uart.c"
+ * 	@brief header del archivo "uart.c"
  * 
- * 	Autor : ROUX, Federico G. (rouxfederico@gmail.com)
+ * 	@author ROUX, Federico G. (rouxfederico@gmail.com)
  * 
- * 	NEROX 11/2011
+ * 	@company NEROX 11/2011
  * 
  *******************************************************************************************/
 
@@ -18,11 +18,9 @@
  * 										Inclusión de archivos											*
  ********************************************************************************************************/
 
-#include <strbus.h>
-#include <Timer_A2.h>
+#include "StrBus/strbus.h"
+#include "Timer_A2/Timer_A2.h"
 
-
-typedef enum {SI, NO} t_bool;
 
 /********************************************************************************************************
  * 									Prototipos de funciones externas									*

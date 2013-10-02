@@ -17,22 +17,22 @@
 #include <msp430f5529.h>
 #include <stdint.h>
 
-#include <strbus.h>
+#include "StrBus/strbus.h"
 
-#include <sensores.h>
+#include "Medicion_Sensores/Sensores/sensores.h"
 
-#include <adc.h>
-#include <dma.h>
-#include <pwm.h>
-#include <dsp.h>
+#include "ADC/adc.h"
+#include "DMA/dma.h"
+#include "PWM/pwm.h"
+#include "Medicion_Sensores/dsp/dsp.h"
 
-#include <hardware_macros.h>
-#include <hardware_drivers.h>
+#include "Hardware/hardware_macros.h"
+#include "Hardware/hardware_drivers.h"
 
-#include <xbob_4.h>
-#include <Temperatura.h>
-#include <Conductividad.h>
-#include <log.h>
+#include "XBOB_4/xbob_4.h"
+#include "Medicion_Sensores/Sensores/Temperatura.h"
+#include "Medicion_Sensores/Sensores/Conductividad.h"
+#include "Log/log.h"
  
 /********************************************************************************************************************
  * 											Prototipos de funciones													*

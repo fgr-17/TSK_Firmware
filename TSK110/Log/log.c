@@ -21,15 +21,15 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <log.h>	
-#include <SD_Card.h>
+#include "Log/log.h"	
+#include "SD_Card/SD_Card.h"
 
-#include <Conductividad.h>
-#include <Temperatura.h>
-#include <xbob_4.h>
-#include <HAL_RTC.h>
-#include <Timer_A2.h>
-#include <modos.h>
+#include "Medicion_Sensores/Sensores/Conductividad.h"
+#include "Medicion_Sensores/Sensores/Temperatura.h"
+#include "XBOB_4/xbob_4.h"
+#include "F5xx_F6xx_Core_Lib/HAL_RTC.h"
+#include "Timer_A2/Timer_A2.h"
+#include "Maq_Estados/modos.h"
 /********************************************************************************************************
  * 											Prototipos de funcioens										*
  ********************************************************************************************************/

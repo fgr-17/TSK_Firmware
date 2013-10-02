@@ -17,10 +17,10 @@
 #include <msp430f5529.h>
 #include <stdint.h>
 
-#include <dma.h>
-#include <pwm.h>
+#include "DMA/dma.h"
+#include "PWM/pwm.h"
 
-#include <dsp.h>
+#include "Medicion_Sensores/dsp/dsp.h"
 /********************************************************************************************************************
  * 											PROTOTIPO DE FUNCIONES													*
  ********************************************************************************************************************/ 

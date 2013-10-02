@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <adc.h>
+#include "ADC/adc.h"
 
 /************************************************************************************************************
  * 											Definición de constnates										*

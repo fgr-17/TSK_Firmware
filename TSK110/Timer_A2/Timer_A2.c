@@ -17,8 +17,8 @@
 #include <msp430f5529.h>
 #include <stdint.h>
 
-#include <hardware_constantes.h>
-#include <Timer_A2.h>
+#include "Hardware/hardware_constantes.h"
+#include "Timer_A2/Timer_A2.h"
 
 /********************************************************************************************************
  *							 				Prototipos de Funciones										*

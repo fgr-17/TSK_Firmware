@@ -19,8 +19,8 @@
 
 #include <msp430f5529.h>
 #include <stdint.h>
-#include <HAL_RTC.h>
-#include <strbus.h>
+#include "F5xx_F6xx_Core_Lib/HAL_RTC.h"
+#include "StrBus/strbus.h"
 
 /****************************************************************************************************************
  * 												Prototipos de funciones											*

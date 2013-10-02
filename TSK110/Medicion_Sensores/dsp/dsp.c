@@ -17,10 +17,10 @@
 #include <msp430f5529.h>
 #include <stdint.h>
 
-#include <dma.h>
-#include <pwm.h>
-#include <dsp.h>
-#include <Conductividad.h>
+#include "DMA/dma.h"
+#include "PWM/pwm.h"
+#include "Medicion_Sensores/dsp/dsp.h"
+#include "Medicion_Sensores/Sensores/Conductividad.h"
 
 /********************************************************************************************************************
  * 											DEFINICIÓN DE CONSTANTES												*
@@ -52,7 +52,7 @@ int16_t sgn_senoidal_largo = xN;			// Cantidad de muestras de la señal
 uint16_t sgn_senoidal_fs = FSW_INICIAL;		// Frecuencia de sampleo de la señal
 
 Sgn_Res sgn_senoidal_muestras[xN] = {
-	#include <sen_90_15kHz_16m.h>
+	#include "Medicion_Sensores/sgn/sen_90_15kHz_16m.h"
 };
 
 

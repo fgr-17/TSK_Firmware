@@ -41,7 +41,7 @@
  ******************************************************************************/
 #include <stdint.h>
 #include "msp430.h"
-#include "HAL_UCS.h"
+#include "F5xx_F6xx_Core_Lib/HAL_UCS.h"
 #include "HAL_AppUart.h"
 #include "HAL_Dogs102x6.h"
 

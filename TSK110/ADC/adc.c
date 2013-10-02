@@ -17,14 +17,14 @@
 #include <msp430f5529.h>
 #include <stdint.h>
 
-#include <hardware_constantes.h>
-#include <adc.h>
+#include "Hardware/hardware_constantes.h"
+#include "ADC/adc.h"
 
-#include <dma.h>
-#include <pwm.h>
-#include <dsp.h>
+#include "DMA/dma.h"
+#include "PWM/pwm.h"
+#include "Medicion_Sensores/dsp/dsp.h"
 
-#include <Conductividad.h>
+#include "Medicion_Sensores/Sensores/Conductividad.h"
 
 /********************************************************************************************************************
  * 											PROTOTIPO DE FUNCIONES													*

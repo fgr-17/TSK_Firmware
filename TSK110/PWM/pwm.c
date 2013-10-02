@@ -17,11 +17,11 @@
 #include <msp430f5529.h>
 #include <stdint.h>
 		
-#include <hardware_constantes.h>
-#include <hardware_macros.h>
+#include "Hardware/hardware_constantes.h"
+#include "Hardware/hardware_macros.h"
 
-#include <dma.h>
-#include <pwm.h>
+#include "DMA/dma.h"
+#include "PWM/pwm.h"
 
 /********************************************************************************************************************
  * 											PROTOTIPO DE FUNCIONES													*

@@ -1,12 +1,13 @@
 /*******************************************************************************************
  *
- * 	Archivo : cadenas_comunicacion.h
+ *  @file 	cadenas_comunicacion.h
  * 
- * 	Descripción: Definición de todas las cadenas de comunicación.
+ * 	@brief 	Definición de todas las cadenas de comunicación.
  * 
- * 	Autor : ROUX, Federico G. (rouxfederico@gmail.com)
+ * 	@author Roux Federico G. (rouxfederico@gmail.com)
  * 
- * 	NEROX 11/2011
+ * 	@date 		11/2011
+ * 	@company	NEROX SRL
  * 
  *******************************************************************************************/
  
@@ -16,17 +17,6 @@
 #define N_CADENA_CMD		26
 
 
-typedef enum {ESTAS = CMD_OFFSET, CONFI,
-			INIMA, INIMS, FINMM,
-			INIMS, FINMS,
-			INICK,FINCK,CANCK, OKACK, FAICK,
-			INICT, FINCT, CANCT,OKACT, FAICT,
-			ARCOK,
-			INIDE, SEFYH,
-			REUMB, REALA,
-			INIRE, FINRE,
-			DUMMY
-} t_Byte_Cmd;
 
 const uint8_t lista_de_comandos[N_CADENA_CMD][CANT_BYTES_BUFFER] = {
 	

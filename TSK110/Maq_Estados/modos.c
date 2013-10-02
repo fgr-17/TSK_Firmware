@@ -19,23 +19,25 @@
 #include <msp430f5529.h>
 
 #include <stdint.h>
-#include <modos.h>
-#include <strbus.h>
+#include "Maq_Estados/modos.h"
+#include "StrBus/strbus.h"
  
-#include <flash_mapeo_variables.h>
+#include "Flash/flash_mapeo_variables.h"
 
-#include <HAL_RTC.h>
+#include "F5xx_F6xx_Core_Lib/HAL_RTC.h"
 
-#include <cadenas_comunicacion_externo.h>
+#include "StrBus/cadenas_comunicacion_externo.h"
 
-#include <Temperatura.h>
-#include <Conductividad.h>
+#include "Medicion_Sensores/Sensores/Temperatura.h"
+#include "Medicion_Sensores/Sensores/Conductividad.h"
 
-#include <SD_Card.h>
-#include <log.h>
+#include "SD_Card/SD_Card.h"
+#include "Log/log.h"
 
-#include <uart.h>
-#include <Timer_A2.h>
+#include "UART/uart.h"
+#include "Timer_A2/Timer_A2.h"
+
+#include "inc/funciones_arrays.h"
 
 /************************************************************************************************************
  * 											Prototipos de funciones											*
@@ -87,16 +89,28 @@ uint16_t year_tmp = 0;											// idem año
 
 T_Modo_Envio_Datos modo_enviar_f_y_h = ENVIAR_FECHA;							// alterna entre envío de fecha y de hora
 
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////				VARIABLES NUEVAS				////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
+T_Modbus*canal_ppal = &canal_rx_0;								// Asigno el canal que se usa como canal principal
+T_Modbus*canal_sec = &canal_rx_2;								// Asigno el canal que se conecta con el slave (en caso de que sea el master)
+
+
 /************************************************************************************************************
  * 											Implementación de funciones										*
  ************************************************************************************************************/
 
 /************************************************************************************************************
- * @brief  	Inicialización de la máquina de estados Modos							*
- * 														*
- * @param 	none												*
- * 														*   
- * @return	0 -> success											*
+ * @brief  	Inicialización de la máquina de estados Modos													*
+ * 																											*
+ * @param 	none																							*
+ * 																											*
+ * @return	0 -> success																					*
  ************************************************************************************************************/
 
 int Modos_Inicializar(void)
@@ -129,152 +143,155 @@ int Modos_Maq_Estados(void)
 	{
 	case CONFIGURACION:
 	
-		if(terminal.Estado_Comando == COMANDO_PENDIENTE )							// Para cambiar de estado:
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )					// Para cambiar de estado:
 		{
-			if(terminal.Comando == MODOS_CMD_INIT_MASTER)
+			// if(terminal.Comando == MODOS_CMD_INIT_MASTER)
+			if(canal_ppal->comando == INIMA)								// CMD : Inicializo master?
 			{						
-				////////////////////////////////////////////////////////////////////////
-				// 		* Envio INIT_MEDICION_S por (T2)			//
-				// 		* Inicializo SD						//
-				// 		* Empiezo a mandar por pantalla. Inicializar?		//
-				////////////////////////////////////////////////////////////////////////
-
-				terminal.modos_estado = MASTER_ESPERA_SLAVE;
-				terminal.Estado_Comando = COMANDO_LIBRE;
-				
-				Activar_Timeout_Slave();								// Empieza la cuenta de timeout, señalizo Slave = vivo
-				canal_tx_2.respuesta = RESPONDER_INIT_MEDICION_S;
+				terminal.modos_estado = MASTER_ESPERA_SLAVE;				// Seteo el estado correspondiente
+				terminal.Estado_Comando = COMANDO_LIBRE;					// Libero flag de comando
+				Activar_Timeout_Slave();									// Empieza la cuenta de timeout, señalizo Slave = vivo
+				// canal_tx_2.respuesta = RESPONDER_INIT_MEDICION_S;		// todo : respuesta
 			}
-			else if(terminal.Comando == MODOS_CMD_INIT_MEDICION_S)						// Recibo éste comando por R1 desde el Master. "q haces, master! ;)"
+			// else if(terminal.Comando == MODOS_CMD_INIT_MEDICION_S)		// Recibo éste comando por R1 desde el Master. "q haces, master! ;)"
+			else if(canal_ppal->comando == INIMS)							// Inicializo medición del esclavo
 			{
-				////////////////////////////////////////////////////////////////////////
-				// 		* Inicializo el RTC como trigger para medición		//
-				//		* Respondo al master que se empezó la medición		//
-				////////////////////////////////////////////////////////////////////////
-				terminal.Ts = TS_MODO_MEDIR;
-				terminal.modos_estado = SLAVE_MIDE;
-				terminal.Estado_Comando = COMANDO_LIBRE;
-				RTCCTL0 = RTCRDYIE + RTCTEVIE;	        						// Habilito la ISR del RTC
+				terminal.Ts = TS_MODO_MEDIR;								// Seteo frecuencia de muestreo para medir
+				terminal.modos_estado = SLAVE_MIDE;							// Paso al estado de SLAVE_MIDE
+				terminal.Estado_Comando = COMANDO_LIBRE;					// Libero flag de comando
+				RTCCTL0 = RTCRDYIE + RTCTEVIE;	        					// Habilito la ISR del RTC
 				terminal.medicion = TERMINAL_LIBRE;							// La terminal está libre para medir
 			}
-			else if(terminal.Comando == MODOS_CMD_INIT_DESCARGA)
+			// else if(terminal.Comando == MODOS_CMD_INIT_DESCARGA)
+			else if(canal_ppal->comando == INIDE)							// CMD : Inicializo descarga?
 			{
-				terminal.modos_estado = DATOS_DISPONIBLES;
-				terminal.Estado_Comando = COMANDO_LIBRE;
-				
-				GetDirectory(root);														// Llamo a GetDirectory() que me de todo lo que hay en Log_Datos, así lo puedo mandar como respuesta.
-				Init_Enviar_Lista_Archivos_Log();										// Inicializo el índice para mandar los nombres
+				terminal.modos_estado = DATOS_DISPONIBLES;					// Paso al estado DATOS_DISPONIBLES
+				terminal.Estado_Comando = COMANDO_LIBRE;					// Libero flag de comando
+				GetDirectory(root);											// Llamo a GetDirectory() que me de lo que hay en Log_Datos, así lo puedo mandar como respuesta.
+				Init_Enviar_Lista_Archivos_Log();							// Inicializo el índice para mandar los nombres
 			}
-			else if(terminal.Comando == MODOS_CMD_INIT_CALIBRACION_K)
+			// else if(terminal.Comando == MODOS_CMD_INIT_CALIBRACION_K)
+			else if(canal_ppal->comando == INICK)							// CMD : Inicializo calibración de conductividad
 			{
-				terminal.Ts	= TS_MODO_CALIBRACION_K;									// Seteo el tiempo de adquisición
-				modo_envio_K = ENVIAR_PENDIENTE; 										// Empiezo mandando la pendiente, offset y después datos
-				terminal.modos_estado = CALIBRACION_K;
-				terminal.Estado_Comando = COMANDO_LIBRE;
-				terminal.medicion = TERMINAL_LIBRE;										// La terminal está libre para medir
-				RTCCTL0 |= RTCRDYIE + RTCTEVIE;         								// Enable interrupt
+				terminal.Ts	= TS_MODO_CALIBRACION_K;						// Seteo el tiempo de adquisición
+				modo_envio_K = ENVIAR_PENDIENTE; 							// todo : Empiezo mandando la pendiente, offset y después datos
+				terminal.modos_estado = CALIBRACION_K;						// Paso al estado de CALIBRACION_K
+				terminal.Estado_Comando = COMANDO_LIBRE;					// Libero flag de comando
+				terminal.medicion = TERMINAL_LIBRE;							// La terminal está libre para medir
+				RTCCTL0 |= RTCRDYIE + RTCTEVIE;         					// Habilito la interrupción del RTC
 			}
-			else if(terminal.Comando == MODOS_CMD_INIT_CALIBRACION_T)
+			// else if(terminal.Comando == MODOS_CMD_INIT_CALIBRACION_T)
+			else if(canal_ppal->comando == INICT)							// CMD : Inicializo calibración de Temperatura
 			{
-				terminal.Ts	= TS_MODO_CALIBRACION_T;									// Seteo el tiempo de adquisición
-				modo_envio_T = ENVIAR_PENDIENTE; 										// Empiezo mandando la pendiente, offset y después datos
-				terminal.modos_estado = CALIBRACION_T;
-				terminal.Estado_Comando = COMANDO_LIBRE;
-				terminal.medicion = TERMINAL_LIBRE;										// La terminal está libre para medir
-				RTCCTL0 |= RTCRDYIE + RTCTEVIE;         								// Enable interrupt
+				terminal.Ts	= TS_MODO_CALIBRACION_T;						// Seteo el tiempo de adquisición
+				modo_envio_T = ENVIAR_PENDIENTE; 							// Empiezo mandando la pendiente, offset y después datos
+				terminal.modos_estado = CALIBRACION_T;						// paso al estado de CALIBRACION_T
+				terminal.Estado_Comando = COMANDO_LIBRE;					// Libero flag de comando
+				terminal.medicion = TERMINAL_LIBRE;							// La terminal está libre para medir
+				RTCCTL0 |= RTCRDYIE + RTCTEVIE;         					// Enable interrupt
 			}
-			else if(terminal.Comando == MODOS_CMD_INIT_SETEAR_F_Y_H)
+			// else if(terminal.Comando == MODOS_CMD_INIT_SETEAR_F_Y_H)
+			else if (canal_ppal->comando == SEFYH)							// CMD : Inicializo configuración de fecha y hora
 			{
-				terminal.modos_estado = RECIBE_HORA;									// La terminal esta lista para recibir seteo de hora y fecha
-				terminal.Estado_Comando = COMANDO_LIBRE;								// Libero el comando
+				terminal.modos_estado = RECIBE_HORA;						// La terminal esta lista para recibir seteo de hora y fecha
+				terminal.Estado_Comando = COMANDO_LIBRE;					// Libero el comando
 			}
-			else if(terminal.Comando == MODOS_CMD_RECIBIR_ALARMA)
+			// else if(terminal.Comando == MODOS_CMD_RECIBIR_ALARMA)
+			else if (canal_ppal->comando == REALA)							// CMD : Modo recibir valor de alarma
 			{
-				terminal.modos_estado = RECIBE_ALARMA;									// La terminal esta lista para recibir seteo de hora y fecha
-				terminal.Estado_Comando = COMANDO_LIBRE;								// Libero el comando
+				terminal.modos_estado = RECIBE_ALARMA;						// La terminal esta lista para recibir seteo de hora y fecha
+				terminal.Estado_Comando = COMANDO_LIBRE;					// Libero el comando
 			}
-			else if(terminal.Comando == MODOS_CMD_RECIBIR_UMBRAL)
+			// else if(terminal.Comando == MODOS_CMD_RECIBIR_UMBRAL)
+			else if (canal_ppal->comando == REUMB)							// CMD : Inicializo modo de recibir umbral
 			{
-				terminal.modos_estado = RECIBE_UMBRAL;									// La terminal esta lista para recibir seteo de hora y fecha
-				terminal.Estado_Comando = COMANDO_LIBRE;								// Libero el comando
+				terminal.modos_estado = RECIBE_UMBRAL;						// La terminal esta lista para recibir seteo de hora y fecha
+				terminal.Estado_Comando = COMANDO_LIBRE;					// Libero el comando
 			}
-			else if(terminal.Comando == MODOS_CMD_INI_REPETIDOR)
+			// else if(terminal.Comando == MODOS_CMD_INI_REPETIDOR)
+			else if (canal_ppal->comando == INIRE)							// CMD : Inicializo modo de repetidor
 			{	
-				terminal.modos_estado = MASTER_REPETIDOR;								// La terminal esta lista para recibir seteo de hora y fecha
-				terminal.Estado_Comando = COMANDO_LIBRE;								// Libero el comando
+				terminal.modos_estado = MASTER_REPETIDOR;					// La terminal esta lista para recibir seteo de hora y fecha
+				terminal.Estado_Comando = COMANDO_LIBRE;					// Libero el comando
 			}
-			else if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)
+			// else if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)
+			else if (canal_ppal->comando == CONFI)							// CMD : Inicializo modo de configuraciòn
 			{
-				terminal.modos_estado = CONFIGURACION;
-				modo_enviar_f_y_h = ENVIAR_FECHA;
-				terminal.Estado_Comando = COMANDO_LIBRE;
+				terminal.modos_estado = CONFIGURACION;						// Estado principal de configuración
+				modo_enviar_f_y_h = ENVIAR_FECHA;							// Seteo modo de enviar fecha y hora
+				terminal.Estado_Comando = COMANDO_LIBRE;					// Libero el comando
 			}
-			else
+			else															// Modo por default:
 			{						
-				terminal.modos_estado = CONFIGURACION;
-				modo_enviar_f_y_h = ENVIAR_FECHA;
-				terminal.Estado_Comando = COMANDO_LIBRE;
-				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
-				return MODOS_RET_UBIC;
+				terminal.modos_estado = CONFIGURACION;						// Vuelvo al estado ppal de configuración
+				modo_enviar_f_y_h = ENVIAR_FECHA;							// Envío fecha y hora
+				terminal.Estado_Comando = COMANDO_LIBRE;					// Libero el comando
+				// canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;				// todo : Respondo error
+				return MODOS_RET_UBIC;										// retorno señalización
 			}
 		}
-		else
-		{			
+		else																// En caso de que no tenga ningún comando pendiente
+		{			// pregunto si la terminal está conectada y si no tiene nada que responder
 			if((terminal.estado_com == TERMINAL_CONECTADA)&&(canal_tx_0.respuesta == NO_RESPONDER))	
-				Leer_y_Enviar_Hora_y_Fecha();	// Envío hora y fecha e info del equipo.
+				Leer_y_Enviar_Hora_y_Fecha();								// Envío hora y fecha e info del equipo.
 		}		
 		break;
 		
-	case MASTER_ESPERA_SLAVE:
+	case MASTER_ESPERA_SLAVE:												// Estado : MASTER_ESPERA_SLAVE
 	
-		if(terminal.Estado_Comando == COMANDO_PENDIENTE )									// Para cambiar de estado:
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )					// Para cambiar de estado:
 		{
-			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)
+			//if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)
+			if (canal_ppal->comando == CONFI)								// CMD : volver a configuración?
 			{
-				terminal.modos_estado = CONFIGURACION;
-				modo_enviar_f_y_h = ENVIAR_FECHA;
-				terminal.Estado_Comando = COMANDO_LIBRE;
+				terminal.modos_estado = CONFIGURACION;						// Vuelvo al estado anterior
+				// modo_enviar_f_y_h = ENVIAR_FECHA;						// todo : Envío fecha
+				terminal.Estado_Comando = COMANDO_LIBRE;					// Libero el comando
 				// Escribir_Word_en_Flash(terminal.modos_estado, MODO_ESTABLECIDO_ADDRESS);	// El cambio al modo "CONFIGURACION" lo guardo en flash			
 			}
-			else if(terminal.Comando == MODOS_CMD_INIT_MEDICION_M)							// Este comando lo recibo por R2, desde el slave.
-			{
-				Activar_Timeout_Slave();													// Empieza la cuenta de timeout, señalizo Slave = vivo
-				terminal.modos_estado = MASTER_MIDE;
-				terminal.Estado_Comando = COMANDO_LIBRE;
+			// else if(terminal.Comando == MODOS_CMD_INIT_MEDICION_M)		// Este comando lo recibo por R2, desde el slave.
+			else if (canal_sec->comando == INIMS)							// Si recibo inicialización de medición de Slave por el
+			{																// canal secundario en realidad es una respuesta confirmatoria del slave
+				Activar_Timeout_Slave();									// Empieza la cuenta de timeout, señalizo Slave = vivo
+				terminal.modos_estado = MASTER_MIDE;						// Paso al estado de master mide
+				terminal.Estado_Comando = COMANDO_LIBRE;					// Libero comando
 			}
 			else
 			{
 				terminal.modos_estado = MASTER_ESPERA_SLAVE;
 				terminal.Estado_Comando = COMANDO_LIBRE;
 				Escribir_Word_en_Flash(terminal.modos_estado, MODO_ESTABLECIDO_ADDRESS);	// El cambio al modo "CONFIGURACION" lo guardo en flash
-				canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;
-				return MODOS_RET_UBIC;			
+				// canal_tx_0.respuesta = RESPONDER_ERROR_UBQ;				// todo : respondo señalización
+				return MODOS_RET_UBIC;										// Señalizo hacia afuera
 			}	
 		}
-		else if(timeout_Slave.slave_vivo == FALSE)											// Si paso el Timeout y no recibí nada, 
+		else if(timeout_Slave.slave_vivo == FALSE)							// Si paso el Timeout y no recibí nada,
 		{
-			terminal.modos_estado = MASTER_MIDE;											// Paso automáticamente a Medir autodisparado
+			terminal.modos_estado = MASTER_MIDE;							// Paso automáticamente a Medir autodisparado
 			terminal.Ts = TS_MODO_MEDIR;
-			terminal.Estado_Comando = COMANDO_LIBRE;										// Por las dudas señalizo comando libre
+			terminal.Estado_Comando = COMANDO_LIBRE;						// Por las dudas señalizo comando libre
 		}
 		break;
 		
-	case MASTER_MIDE:
+	case MASTER_MIDE:														// Estado : Master midiendo
 
-		if(terminal.Estado_Comando == COMANDO_PENDIENTE )									// Para cambiar de estado:
+		if(terminal.Estado_Comando == COMANDO_PENDIENTE )					// Para cambiar de estado:
 		{
-			if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)								// Vuelvo al estado ppal.
+			// if(terminal.Comando ==  MODOS_CMD_CONFIGURACION)
+			if (canal_ppal->comando == CONFI)								// Vuelvo al estado ppal.
 			{
 				terminal.modos_estado = CONFIGURACION;
 				terminal.Estado_Comando = COMANDO_LIBRE;
 				modo_enviar_f_y_h = ENVIAR_FECHA;			
 			}
-			else if(terminal.Comando ==  MODOS_CMD_FIN_MEDICION_M)							// Este comando lo recibo por R2
+			// else if(terminal.Comando ==  MODOS_CMD_FIN_MEDICION_M)		// Este comando lo recibo por R2
+			else if (canal_ppal->comando == FINMM)
 			{
 				terminal.modos_estado = MASTER_ESPERA_SLAVE;
 				terminal.Estado_Comando = COMANDO_LIBRE;	
 			}
-			else if(terminal.Comando ==  MODOS_CMD_DATO)									// Recibo datos por R2
+			// else if(terminal.Comando ==  MODOS_CMD_DATO)					// Recibo datos por R2
+			else if ((canal_sec->comando == DATOK)||(canal_sec->comando == DATOT))		// Pregunto si recibí un dato del slave
 			{
 				//////////////////////////////////////////////////////////////////////////
 				//				* Hago una medición de T y K							//
@@ -804,6 +821,7 @@ int Modos_Maq_Estados(void)
 			}
 			else if(terminal.Comando ==  MODOS_CMD_DATO)												// Recibí un dato
 			{
+				/*
 				hour_tmp = canal_rx_0.frame[1];															// Guardo temporalmente la hora
 				min_tmp = canal_rx_0.frame[2];															// idem minuto
 				sec_tmp = canal_rx_0.frame[3]; 															// idem segundo
@@ -811,6 +829,7 @@ int Modos_Maq_Estados(void)
 				terminal.modos_estado = RECIBE_FECHA;
 				terminal.Estado_Comando = COMANDO_LIBRE;
 				canal_tx_0.respuesta = RESPONDER_OK;
+				*/
 			}
 			else
 			{
@@ -839,7 +858,7 @@ int Modos_Maq_Estados(void)
 				
 				year_tmp = canal_rx_0.frame[3]; 														// guardo los 2 dígitos más sign. del año
 				year_tmp <<= 8;																			// los corro 2 dígitos hacia la izquierda
-				year_tmp += canal_rx_0.frame[4];														// guardo los dos dígitos más bajos
+//				year_tmp += canal_rx_0.frame[4];														// guardo los dos dígitos más bajos
 				
 				if(!Establecer_Registros_RTC(hour_tmp, min_tmp, sec_tmp, day_tmp, mon_tmp, year_tmp))	// Valido y seteo el valor de los registros
 				{
@@ -1294,7 +1313,7 @@ inline int Leer_DWord_Entrante(T_Modbus *ch_in)
 	dato_a_leer.bytes[3] = ch_in->frame[LEER_DATO_BYTE3];							// Si llegué hasta acá, está todo OK. Copio la parte alta del dato
 	dato_a_leer.bytes[2] = ch_in->frame[LEER_DATO_BYTE2];							// Copio la parte alta del dato
 	dato_a_leer.bytes[1] = ch_in->frame[LEER_DATO_BYTE1];							// Copio la parte alta del dato
-	dato_a_leer.bytes[0] = ch_in->frame[LEER_DATO_BYTE0];							// Copio la parte alta del dato
+//	dato_a_leer.bytes[0] = ch_in->frame[LEER_DATO_BYTE0];							// Copio la parte alta del dato
 	
 	ch_in->Dato = (int32_t)dato_a_leer.dword; 										// paso a la variable del canal de recepción.
 	
@@ -1328,7 +1347,7 @@ inline int Leer_Words_Entrantes(T_Modbus* ch_in)
 	dato_a_leer_1.bytes[1] = ch_in->frame[2];														// Copio la parte baja del dato 1
 	
 	dato_a_leer_2.bytes[0] = ch_in->frame[3];														// Copio la parte alta del dato 2
-	dato_a_leer_2.bytes[1] = ch_in->frame[4];														// Copio la parte baja del dato 2
+//	dato_a_leer_2.bytes[1] = ch_in->frame[4];														// Copio la parte baja del dato 2
 	
 	ch_in->dato_1 = (int16_t)dato_a_leer_1.word; 													// paso a la variable del canal de recepción.
 	ch_in->dato_2 = (int16_t)dato_a_leer_2.word; 													// paso a la variable del canal de recepción.
