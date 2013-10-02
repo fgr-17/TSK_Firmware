@@ -17,7 +17,7 @@
 #include <msp430f5529.h>
 #include <stdint.h>
 
-#include <hardware_macros.h>
+#include "Hardware/hardware_macros.h"
 
 /******************************************************************************************** 	
  * 									Prototipos de funciones									*

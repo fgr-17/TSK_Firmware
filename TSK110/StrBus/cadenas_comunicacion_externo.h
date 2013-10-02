@@ -15,7 +15,7 @@
 
 #define N_CADENA_CMD		12
 
-extern const uint8_t lista_de_comandos[N_CADENA_CMD][CANT_BYTES_BUFFER];				// Array de strings con los comandos posibles
+// extern const uint8_t lista_de_comandos[N_CADENA_CMD][CANT_BYTES_BUFFER];				// Array de strings con los comandos posibles
 
 extern const uint8_t cadena_estoy 	  [CANT_BYTES_BUFFER]; 								// Comienzo la comunicación
 extern const uint8_t cadena_error_crc [CANT_BYTES_BUFFER];								// El frame traía un error de CRC

@@ -13,7 +13,7 @@
 
 #include <intrinsics.h>         /* Include MSP430-specific intrincs */
 #include "diskio.h"             /* Common include file for FatFs and disk I/O layer */
-#include "HAL_SDCard.h"         /* MSP-EXP430F5529 specific SD Card driver */
+#include "MSP-EXP430F5529_HAL/HAL_SDCard.h"         /* MSP-EXP430F5529 specific SD Card driver */
 
 /*-------------------------------------------------------------------------*/
 /* Platform dependent macros and functions needed to be modified           */

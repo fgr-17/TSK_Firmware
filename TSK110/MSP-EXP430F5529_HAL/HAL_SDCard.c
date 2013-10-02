@@ -1,6 +1,6 @@
 
 #include <msp430f5529.h>
-#include <HAL_SDCard.h>
+#include "MSP-EXP430F5529_HAL/HAL_SDCard.h"
 
 // Pins from MSP430 connected to the SD Card
 #define SPI_SIMO        BIT1

@@ -11,8 +11,8 @@
 #include <msp430f5529.h>
 #include <stdint.h>
 
-#include <strbus.h>
-#include <flash_mapeo_variables.h>
+#include "StrBus/strbus.h"
+#include "Flash/flash_mapeo_variables.h"
 
 /****************************************************************************************************************
  * 											Prototipos de Funciones												*

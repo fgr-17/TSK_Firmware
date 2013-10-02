@@ -24,10 +24,10 @@
 #include <string.h>
 
 #include "msp430.h"
-#include "HAL_Board.h"
-#include "HAL_SDCard.h"
+#include "MSP-EXP430F5529_HAL/HAL_Board.h"
+#include "MSP-EXP430F5529_HAL/HAL_SDCard.h"
 
-#include "ff.h"
+#include "FatFs/ff.h"
 
 /********************************************************************************************************
  * 										Definición de constantes										*

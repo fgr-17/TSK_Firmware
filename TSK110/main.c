@@ -18,38 +18,38 @@
 #include <msp430f5529.h>
 #include <stdint.h>
 
-#include <hardware_macros.h>
-#include <hardware_constantes.h>
-#include <hardware_drivers.h>
+#include "Hardware/hardware_macros.h"
+#include "Hardware/hardware_constantes.h"
+#include "Hardware/hardware_drivers.h"
 
-#include <HAL_UCS.h>
-#include <HAL_PMM.h>
-#include <HAL_RTC.h>
+#include "F5xx_F6xx_Core_Lib/HAL_UCS.h"
+#include "F5xx_F6xx_Core_Lib/HAL_PMM.h"
+#include "F5xx_F6xx_Core_Lib/HAL_RTC.h"
 
-#include <HAL_Board.h>
+#include "MSP-EXP430F5529_HAL/HAL_Board.h"
 
-#include <modos.h>
-#include <strbus.h>
-#include <uart.h>
+#include "Maq_Estados/modos.h"
+#include "StrBus/strbus.h"
+#include "UART/uart.h"
 
-#include <adc.h>
-#include <dma.h>
-#include <pwm.h>
-#include <dsp.h>
+#include "ADC/adc.h"
+#include "DMA/dma.h"
+#include "PWM/pwm.h"
+#include "Medicion_Sensores/dsp/dsp.h"
 
-#include <sensores.h>
+#include "Medicion_Sensores/Sensores/sensores.h"
 
-#include <Timer_A2.h>
+#include "Timer_A2/Timer_A2.h"
 
-#include <log.h>
-#include <xbob_4.h>
+#include "Log/log.h"
+#include "XBOB_4/xbob_4.h"
 
-#include <Temperatura.h>
-#include <Conductividad.h>
-#include <SD_Card.h>
+#include "Medicion_Sensores/Sensores/Temperatura.h"
+#include "Medicion_Sensores/Sensores/Conductividad.h"
+#include "SD_Card/SD_Card.h"
 
-// #include <RST_NMI.h>
-#include <flash_mapeo_variables.h>
+// #include "RST_NMI/RST_NMI.h"
+#include "Flash/flash_mapeo_variables.h"
 
 /********************************************************************************************************
  * 										Prototipos de funciones											*
@@ -77,8 +77,11 @@ int main(void)
 	
 	Inicializar_Terminal();																// Inicializo la estructura de la terminal del equipo
  	
- 	Inicializar_Canal_1();																// Inicializo el canal 1
- 	Inicializar_Canal_2();																// Inicializo el canal 2
+ 	
+ 	Inicializar_Canal (&canal_rx_0);
+ 	Inicializar_Canal (&canal_tx_0);
+ 	// Inicializar_Canal_1();																// Inicializo el canal 1
+ 	// Inicializar_Canal_2();																// Inicializo el canal 2
 
 	Inicializar_XBOB();																	// Inicalizo el software del XBOB4
 	
@@ -100,12 +103,18 @@ int main(void)
  	while(1)
  	{  		
  		Frame_Timeout(&canal_rx_0, delay_timer_A2);										// Pregunto si tengo que limpiar el buffer de entrada del canal rx 1
- 		Procesar_Frame_Recibido(&canal_rx_0, &canal_tx_0);								// Proceso el frame del canal rx 1 en caso que haya uno pendiente
- 		Procesar_Frame_Recibido(&canal_rx_2, &canal_tx_2);								// Proceso el frame del canal rx 1 en caso que haya uno pendiente 		
- 		Medicion_Sensores();															// Hago una medición de acuerdo al estado del equipo
- 		Modos_Maq_Estados();															// Evaluo la máquina de estados
- 		Frame_Respuesta(&canal_tx_0, canal_rx_0, UART0);								// Respondo en caso que sea necesario
- 		Frame_Respuesta(&canal_tx_2, canal_rx_2, UART1);								// Respondo en caso que sea necesario
+ 		
+ 		Tarea_Atender_Canal_Transmision(&canal_tx_0);
+ 		Tarea_Atender_Canal_Recepcion(&canal_rx_0, &canal_tx_0); 		
+ 		
+ 		
+ 		
+// 		Procesar_Frame_Recibido(&canal_rx_0, &canal_tx_0);								// Proceso el frame del canal rx 1 en caso que haya uno pendiente
+// 		Procesar_Frame_Recibido(&canal_rx_2, &canal_tx_2);								// Proceso el frame del canal rx 1 en caso que haya uno pendiente 		
+// 		Medicion_Sensores();															// Hago una medición de acuerdo al estado del equipo
+// 		Modos_Maq_Estados();															// Evaluo la máquina de estados
+// 		Frame_Respuesta(&canal_tx_0, canal_rx_0, UART0);								// Respondo en caso que sea necesario
+// 		Frame_Respuesta(&canal_tx_2, canal_rx_2, UART1);								// Respondo en caso que sea necesario
  	}	
 }
 

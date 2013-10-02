@@ -19,14 +19,14 @@
 #include <msp430f5529.h>
 #include <stdint.h>
 
-#include <dma.h>
-#include <dsp.h>
+#include "DMA/dma.h"
+#include "Medicion_Sensores/dsp/dsp.h"
 
-#include <pwm.h>
-#include <adc.h>
+#include "PWM/pwm.h"
+#include "ADC/adc.h"
 
-#include <Conductividad.h>
-#include <Temperatura.h>
+#include "Medicion_Sensores/Sensores/Conductividad.h"
+#include "Medicion_Sensores/Sensores/Temperatura.h"
 
 /************************************************************************************************************
  * 											Prototipos de funciones											*

@@ -16,20 +16,22 @@
 #include <msp430f5529.h>
 #include <stdint.h>
 
-#include <strbus.h>
-#include <xbob_4.h>
+#include "StrBus/strbus.h"
+#include "XBOB_4/xbob_4.h"
 
-#include <uart.h>
+#include "UART/uart.h"
 
-#include <xbob_4_cadenas.h>
-#include <adc.h>
+#include "XBOB_4/xbob_4_cadenas.h"
+#include "ADC/adc.h"
 
-#include <Temperatura.h>
-#include <Conductividad.h>
+#include "Medicion_Sensores/Sensores/Temperatura.h"
+#include "Medicion_Sensores/Sensores/Conductividad.h"
 
-#include <strbus.h>
-#include <HAL_RTC.h>
-#include <modos.h>
+#include "StrBus/strbus.h"
+#include "F5xx_F6xx_Core_Lib/HAL_RTC.h"
+#include "Maq_Estados/modos.h"
+
+#include "./inc/funciones_arrays.h"
 
 /********************************************************************************************************
  * 											Prototipos de funciones										*
@@ -201,7 +203,7 @@ int Enviar_Medicion_Binario(void)
 		canal_salida_xbob->frame[i + K2_BYTE_INI] = k2_frame.bytes[i];						// Extraigo los bytes de la medición de K2
 		canal_salida_xbob->frame[i + T2_BYTE_INI] = t2_frame.bytes[i];						// Extraigo los bytes de la medición de T2
 	}
-	
+	/*
 	if(alarma_master)	
 		canal_salida_xbob->frame[AM_BYTE_INI] = 0x01;
 	else 
@@ -214,7 +216,7 @@ int Enviar_Medicion_Binario(void)
 	
 	if(timeout_Slave.slave_vivo == FALSE)	
 		canal_salida_xbob->frame[AS_BYTE_INI] |= 0x02;										// Si el slave está muerto, lo indico con un bit
-	
+	*/
 	canal_salida_xbob->len_cadena = FRAME_MEDICIONES_LEN;									// Guardo el largo de la cadena a enviar
 	Iniciar_Transmision_Paquete_UART0(canal_salida_xbob);									// Mando el primer caracter
 	while(canal_salida_xbob->estado_buffer != BUFFER_VACIO);								// Espero que se haya transmitido el CSI

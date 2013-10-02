@@ -16,9 +16,9 @@
  * 											Inclusión de archivos											*
  ************************************************************************************************************/
 
-#include <Temperatura.h>
+#include "Medicion_Sensores/Sensores/Temperatura.h"
 
-#include <adc.h>
+#include "ADC/adc.h"
 
 /************************************************************************************************************
  * 												Variables globales											*

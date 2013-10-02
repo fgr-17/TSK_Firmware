@@ -18,13 +18,13 @@
 #include <msp430f5529.h>
 #include <stdint.h>
 
-#include <hardware_constantes.h>
+#include "Hardware/hardware_constantes.h"
 
-#include <dma.h>
-#include <pwm.h> 
-#include <dsp.h>
+#include "DMA/dma.h"
+#include "PWM/pwm.h" 
+#include "Medicion_Sensores/dsp/dsp.h"
 
-#include <Timer_A0.h>
+#include "Timer_A0/Timer_A0.h"
  
 /********************************************************************************************************************
  * 																													*

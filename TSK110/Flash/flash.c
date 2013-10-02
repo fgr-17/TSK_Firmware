@@ -15,8 +15,8 @@
 #include <msp430f5529.h>
 #include <stdint.h>
 
-#include <flash.h>
-#include <flash_mapeo_variables.h>
+#include "Flash/flash.h"
+#include "Flash/flash_mapeo_variables.h"
 
 
 /****************************************************************************************************************
