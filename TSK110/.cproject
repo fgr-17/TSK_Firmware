@@ -45,27 +45,7 @@
 								<option id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compilerID.SILICON_ERRATA.CPU40.876363948" name="Workaround specified silicon errata (--silicon_errata) [CPU40]" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compilerID.SILICON_ERRATA.CPU40" value="true" valueType="boolean"/>
 								<option id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compilerID.INCLUDE_PATH.220894682" name="Add dir to #include search path (--include_path, -I)" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compilerID.INCLUDE_PATH" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${CCS_BASE_ROOT}/msp430/include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/StrBus}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/RST_NMI}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/Timer_A0}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/XBOB_4}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/Log}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/FatFs}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/SD_Card}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/Medicion_Sensores/Sensores}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/Medicion_Sensores/dsp}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/Timer_A2}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/Medicion_Sensores/sgn}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/Hardware}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/F5xx_F6xx_Core_Lib}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/Medicion_Sensores}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/DMA}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/MSP-EXP430F5529_HAL}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/PWM}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/Flash}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/ADC}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/UART}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Modulo_RS232/Maq_Estados}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${CG_TOOL_ROOT}/include&quot;"/>
 								</option>
 								<option id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compilerID.DEBUGGING_MODEL.1613500925" name="Debugging model" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compilerID.DEBUGGING_MODEL" value="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compilerID.DEBUGGING_MODEL.SYMDEBUG__DWARF" valueType="enumerated"/>
@@ -134,12 +114,12 @@
 							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM2_SRCS.1290351894" name="Assembly Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM2_SRCS"/>
 						</tool>
 					</fileInfo>
-					<fileInfo id="com.ti.ccstudio.buildDefinitions.MSP430.Debug.1143431964./Modulo_RS232/MSP-EXP430F5529_HAL/HAL_Wheel.c" name="HAL_Wheel.c" rcbsApplicability="disable" resourcePath="MSP-EXP430F5529_HAL/HAL_Wheel.c" toolsToInvoke="com.ti.ccstudio.buildDefinitions.MSP430_3.3.exe.compilerDebug.452379538./Modulo_RS232/MSP-EXP430F5529_HAL/HAL_Wheel.c">
-						<tool id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.exe.compilerDebug.452379538./Modulo_RS232/MSP-EXP430F5529_HAL/HAL_Wheel.c" name="MSP430 Compiler" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.exe.compilerDebug.452379538">
-							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__C_SRCS.912275441" name="C Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__C_SRCS"/>
-							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__CPP_SRCS.663454269" name="C++ Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__CPP_SRCS"/>
-							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM_SRCS.417288810" name="Assembly Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM_SRCS"/>
-							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM2_SRCS.912777472" name="Assembly Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM2_SRCS"/>
+					<fileInfo id="com.ti.ccstudio.buildDefinitions.MSP430.Debug.1143431964./Modulo_RS232/MSP-EXP430F5529_HAL/HAL_Board.c" name="HAL_Board.c" rcbsApplicability="disable" resourcePath="MSP-EXP430F5529_HAL/HAL_Board.c" toolsToInvoke="com.ti.ccstudio.buildDefinitions.MSP430_3.3.exe.compilerDebug.452379538./Modulo_RS232/MSP-EXP430F5529_HAL/HAL_Board.c">
+						<tool id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.exe.compilerDebug.452379538./Modulo_RS232/MSP-EXP430F5529_HAL/HAL_Board.c" name="MSP430 Compiler" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.exe.compilerDebug.452379538">
+							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__C_SRCS.1345010954" name="C Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__C_SRCS"/>
+							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__CPP_SRCS.2064746389" name="C++ Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__CPP_SRCS"/>
+							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM_SRCS.877782935" name="Assembly Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM_SRCS"/>
+							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM2_SRCS.538120203" name="Assembly Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM2_SRCS"/>
 						</tool>
 					</fileInfo>
 					<fileInfo id="com.ti.ccstudio.buildDefinitions.MSP430.Debug.1143431964./Modulo_RS232/MSP-EXP430F5529_HAL/HAL_Cma3000.c" name="HAL_Cma3000.c" rcbsApplicability="disable" resourcePath="MSP-EXP430F5529_HAL/HAL_Cma3000.c" toolsToInvoke="com.ti.ccstudio.buildDefinitions.MSP430_3.3.exe.compilerDebug.452379538./Modulo_RS232/MSP-EXP430F5529_HAL/HAL_Cma3000.c">
@@ -150,12 +130,12 @@
 							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM2_SRCS.890739452" name="Assembly Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM2_SRCS"/>
 						</tool>
 					</fileInfo>
-					<fileInfo id="com.ti.ccstudio.buildDefinitions.MSP430.Debug.1143431964./Modulo_RS232/MSP-EXP430F5529_HAL/HAL_Board.c" name="HAL_Board.c" rcbsApplicability="disable" resourcePath="MSP-EXP430F5529_HAL/HAL_Board.c" toolsToInvoke="com.ti.ccstudio.buildDefinitions.MSP430_3.3.exe.compilerDebug.452379538./Modulo_RS232/MSP-EXP430F5529_HAL/HAL_Board.c">
-						<tool id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.exe.compilerDebug.452379538./Modulo_RS232/MSP-EXP430F5529_HAL/HAL_Board.c" name="MSP430 Compiler" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.exe.compilerDebug.452379538">
-							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__C_SRCS.1345010954" name="C Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__C_SRCS"/>
-							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__CPP_SRCS.2064746389" name="C++ Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__CPP_SRCS"/>
-							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM_SRCS.877782935" name="Assembly Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM_SRCS"/>
-							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM2_SRCS.538120203" name="Assembly Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM2_SRCS"/>
+					<fileInfo id="com.ti.ccstudio.buildDefinitions.MSP430.Debug.1143431964./Modulo_RS232/MSP-EXP430F5529_HAL/HAL_Wheel.c" name="HAL_Wheel.c" rcbsApplicability="disable" resourcePath="MSP-EXP430F5529_HAL/HAL_Wheel.c" toolsToInvoke="com.ti.ccstudio.buildDefinitions.MSP430_3.3.exe.compilerDebug.452379538./Modulo_RS232/MSP-EXP430F5529_HAL/HAL_Wheel.c">
+						<tool id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.exe.compilerDebug.452379538./Modulo_RS232/MSP-EXP430F5529_HAL/HAL_Wheel.c" name="MSP430 Compiler" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.exe.compilerDebug.452379538">
+							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__C_SRCS.912275441" name="C Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__C_SRCS"/>
+							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__CPP_SRCS.663454269" name="C++ Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__CPP_SRCS"/>
+							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM_SRCS.417288810" name="Assembly Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM_SRCS"/>
+							<inputType id="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM2_SRCS.912777472" name="Assembly Sources" superClass="com.ti.ccstudio.buildDefinitions.MSP430_3.3.compiler.inputType__ASM2_SRCS"/>
 						</tool>
 					</fileInfo>
 					<fileInfo id="com.ti.ccstudio.buildDefinitions.MSP430.Debug.1143431964./Modulo_RS232/RST_NMI/RST_NMI.c" name="RST_NMI.c" rcbsApplicability="disable" resourcePath="RST_NMI/RST_NMI.c" toolsToInvoke="com.ti.ccstudio.buildDefinitions.MSP430_3.3.exe.compilerDebug.452379538./Modulo_RS232/RST_NMI/RST_NMI.c">

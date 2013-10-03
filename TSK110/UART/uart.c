@@ -42,6 +42,10 @@ int Iniciar_Transmision_Paquete_UART1(T_Modbus* ch_out);
 
 int Frame_Timeout(T_Modbus* canal_rx, T_Delay timer_timeout);
 int Frame_Timeout_UART1(void);
+
+__inline int Leer_Dato_Buffer_INLINE(T_Modbus*canal, uint8_t*dato_leido);
+__inline int Escribir_Dato_Buffer_INLINE (T_Modbus*canal, uint8_t dato_a_escribir);
+
 /********************************************************************************************************
  * 										Implementación de funciones										*
  ********************************************************************************************************/
@@ -181,6 +185,62 @@ int Iniciar_Transmision_Paquete_UART1(T_Modbus* ch_out)
 	return 0;
 }
 
+/************************************************************************************************************
+ *	@brief 		Escribo un dato en el buffer (versión inline)
+ *
+ * 	@params 	canal : Canal a escribir
+ * 	@params		dato_a_escribir :
+ *
+ * 	@returns 	none
+ *
+ ************************************************************************************************************/
+
+__inline int Escribir_Dato_Buffer_INLINE (T_Modbus*canal, uint8_t dato_a_escribir)
+{
+	if(canal->estado_buffer == BUFFER_LLENO)					// Pregunto si el buffer ya está lleno
+		return ESCRIBIR_DATO_BUFFER_LLENO;						// Retorno error de buffer lleno
+
+	canal->buffer[canal->i_fr] = dato_a_escribir;				// Escribo el dato en el frente
+	canal->i_fr++;												// Incremento el puntero del frente
+
+	if(canal->i_fr >= BUFFER_N)									// Pregunto si el puntero del frente llegó al final
+		canal->i_fr = 0;										// Lo inicializo al comienzo
+
+	if(canal->i_fo >= canal->i_fr)								// Si los índices son iguales
+		canal->estado_buffer = BUFFER_LLENO;					// es porque el buffer está lleno
+
+	return ESCRIBIR_DATO_OK;
+
+}
+
+/************************************************************************************************************
+ *	@brief 		Atiendo los datos recibidos por uno de los canales de transmisión(versión inline)
+ *
+ * 	@params 	canal : Canal a leer
+ * 	@params		dato_leido : puntero al dato a leer
+ *
+ * 	@returns 	none
+ *
+ ************************************************************************************************************/
+
+__inline int Leer_Dato_Buffer_INLINE(T_Modbus*canal, uint8_t*dato_leido)
+{
+
+	if(canal->estado_buffer == BUFFER_VACIO)					// Si el buffer está vacío
+		return LEER_DATO_BUFFER_VACIO;							// Señalizo y salgo
+
+	canal->i_fo++;												// Incremento el índice del fondo
+	if(canal->i_fo >= BUFFER_N)									// Pregunto si llegué al final
+		canal->i_fo = 0;										// Lo vuelvo a poner al principio
+
+	*dato_leido = canal->buffer[canal->i_fo];					// Guardo el dato leido
+
+	if(((canal->i_fo + 1)%BUFFER_N) >= canal->i_fr)				// Condición para buffer vacío
+		canal->estado_buffer = BUFFER_VACIO;					// Caso verdadero: señalizo
+
+	return LEER_DATO_BUFFER_OK;									// Retorno éxito en la lectura
+}
+
 /********************************************************************************************************
  *																										*
  *  @brief		ISR de la UART0																			*
@@ -205,24 +265,10 @@ __interrupt void USCI_A0_ISR(void)
 		
 		rx = UCA0RXBUF;														// Leo el byte recibido
 		UCA0IFG = 0;														// Limpio el flag de interrupción pendiente
-		
-		if(canal_rx_0.estado_buffer == BUFFER_LLENO)						// Pregunto si el buffer está lleno
-			return; 														// Si el buffer está lleno, salgo nomas
-			
-		else
-		{
-			canal_rx_0.buffer[canal_rx_0.ind_bf] = rx;						// Guardo el dato recibido
-			canal_rx_0.ind_bf++;											// incremento el índice guardado
-			canal_rx_0.dato_pendiente = SI;									// Subo el flag de dato pendiente
 
-			if(canal_rx_0.ind_bf >= BUFFER_N)								// Pregunto si el buffer se llenó
-			{
-				canal_rx_0.estado_buffer = BUFFER_LLENO;					// En ése caso, señalizo buffer lleno
-				return;														// Salgo de la interrupción
-			}
-			else
-				canal_rx_0.estado_buffer = BUFFER_CARGANDO;					// Si no está lleno, señalizo buffer cargando
-		}
+		if(!Escribir_Dato_Buffer_INLINE(&canal_rx_0, rx))					// Escribo dato en forma inline
+			return;															// Si hubo error al escribir, salgo
+		
 		break;
 
 	case 4:                             												// Vector 4 - TXIFG

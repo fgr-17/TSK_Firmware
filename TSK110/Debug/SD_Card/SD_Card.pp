@@ -10,11 +10,11 @@ SD_Card/SD_Card.obj: C:/ti/ccsv5/tools/compiler/msp430/include/string.h
 SD_Card/SD_Card.obj: C:/ti/ccsv5/ccs_base/msp430/include/msp430.h
 SD_Card/SD_Card.obj: C:/ti/ccsv5/ccs_base/msp430/include/msp430f5529.h
 SD_Card/SD_Card.obj: C:/ti/ccsv5/ccs_base/msp430/include/in430.h
-SD_Card/SD_Card.obj: C:/Documents\ and\ Settings/fede/workspace_v5_1/Modulo_RS232/MSP-EXP430F5529_HAL/HAL_Board.h
-SD_Card/SD_Card.obj: C:/Documents\ and\ Settings/fede/workspace_v5_1/Modulo_RS232/MSP-EXP430F5529_HAL/HAL_SDCard.h
-SD_Card/SD_Card.obj: C:/Documents\ and\ Settings/fede/workspace_v5_1/Modulo_RS232/FatFs/ff.h
-SD_Card/SD_Card.obj: C:/Documents\ and\ Settings/fede/workspace_v5_1/Modulo_RS232/FatFs/integer.h
-SD_Card/SD_Card.obj: C:/Documents\ and\ Settings/fede/workspace_v5_1/Modulo_RS232/FatFs/ffconf.h
+SD_Card/SD_Card.obj: C:/Documents\ and\ Settings/fede/Mis\ documentos/TSK100/Firmware_rep/Repo/TSK110/MSP-EXP430F5529_HAL/HAL_Board.h
+SD_Card/SD_Card.obj: C:/Documents\ and\ Settings/fede/Mis\ documentos/TSK100/Firmware_rep/Repo/TSK110/MSP-EXP430F5529_HAL/HAL_SDCard.h
+SD_Card/SD_Card.obj: C:/Documents\ and\ Settings/fede/Mis\ documentos/TSK100/Firmware_rep/Repo/TSK110/FatFs/ff.h
+SD_Card/SD_Card.obj: C:/Documents\ and\ Settings/fede/Mis\ documentos/TSK100/Firmware_rep/Repo/TSK110/FatFs/integer.h
+SD_Card/SD_Card.obj: C:/Documents\ and\ Settings/fede/Mis\ documentos/TSK100/Firmware_rep/Repo/TSK110/FatFs/ffconf.h
 
 ../SD_Card/SD_Card.c: 
 ../SD_Card/SD_Card.h: 
@@ -26,8 +26,8 @@ C:/ti/ccsv5/tools/compiler/msp430/include/string.h:
 C:/ti/ccsv5/ccs_base/msp430/include/msp430.h: 
 C:/ti/ccsv5/ccs_base/msp430/include/msp430f5529.h: 
 C:/ti/ccsv5/ccs_base/msp430/include/in430.h: 
-C:/Documents\ and\ Settings/fede/workspace_v5_1/Modulo_RS232/MSP-EXP430F5529_HAL/HAL_Board.h: 
-C:/Documents\ and\ Settings/fede/workspace_v5_1/Modulo_RS232/MSP-EXP430F5529_HAL/HAL_SDCard.h: 
-C:/Documents\ and\ Settings/fede/workspace_v5_1/Modulo_RS232/FatFs/ff.h: 
-C:/Documents\ and\ Settings/fede/workspace_v5_1/Modulo_RS232/FatFs/integer.h: 
-C:/Documents\ and\ Settings/fede/workspace_v5_1/Modulo_RS232/FatFs/ffconf.h: 
+C:/Documents\ and\ Settings/fede/Mis\ documentos/TSK100/Firmware_rep/Repo/TSK110/MSP-EXP430F5529_HAL/HAL_Board.h: 
+C:/Documents\ and\ Settings/fede/Mis\ documentos/TSK100/Firmware_rep/Repo/TSK110/MSP-EXP430F5529_HAL/HAL_SDCard.h: 
+C:/Documents\ and\ Settings/fede/Mis\ documentos/TSK100/Firmware_rep/Repo/TSK110/FatFs/ff.h: 
+C:/Documents\ and\ Settings/fede/Mis\ documentos/TSK100/Firmware_rep/Repo/TSK110/FatFs/integer.h: 
+C:/Documents\ and\ Settings/fede/Mis\ documentos/TSK100/Firmware_rep/Repo/TSK110/FatFs/ffconf.h: 
