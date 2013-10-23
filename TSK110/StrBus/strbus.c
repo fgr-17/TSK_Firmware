@@ -105,10 +105,10 @@ int Inicializar_Canal (T_Modbus*canal)
 	
 	// canal->ind_bf = 0;
 	canal->ind_fr = 0;
-	canal->fp= canal->frame;
+	// canal->fp= canal->frame;
 	
 	canal->i_fr = 0;								// El puntero del frente se inicializa al inicio
-	canal->i_fo = FRAME_N - 1;						// El puntero del fondo se inicializa al final del buffer
+	canal->i_fo = BUFFER_N - 1;						// El puntero del fondo se inicializa al final del buffer
 	
 	return 0;
 }
@@ -130,11 +130,13 @@ int Escribir_Dato_Buffer (T_Modbus*canal, uint8_t dato_a_escribir)
 
 	canal->buffer[canal->i_fr] = dato_a_escribir;				// Escribo el dato en el frente
 	canal->i_fr++;												// Incremento el puntero del frente
+	//canal->dato_pendiente = SI;									// Levanto flag de dato pendiente
+	canal->estado_buffer = BUFFER_CARGANDO;						// Señalizo buffer cargando
 
 	if(canal->i_fr >= BUFFER_N)									// Pregunto si el puntero del frente llegó al final
 		canal->i_fr = 0;										// Lo inicializo al comienzo
 
-	if(canal->i_fo >= canal->i_fr)								// Si los índices son iguales
+	if(canal->i_fo == canal->i_fr)								// Si los índices son iguales
 		canal->estado_buffer = BUFFER_LLENO;					// es porque el buffer está lleno
 
 	return ESCRIBIR_DATO_OK;
@@ -189,6 +191,7 @@ int Tarea_Atender_Canal_Transmision (T_Modbus*canal)
 			if(!Leer_Dato_Buffer(canal, &dato_a_enviar))			// Extraigo un dato del buffer de salida
 			{														// Si pude sacar un dato:
 				UCA0TXBUF = dato_a_enviar;							// Escribo el dato a enviar en reg.de salida
+				canal->dato_pendiente = SI;
 			}
 			else													// En caso que no haya podido sacar un dato:
 			{
@@ -229,12 +232,15 @@ int Tarea_Atender_Canal_Recepcion(T_Modbus*canal, T_Modbus*canal_envio)
 		canal->bytes_no_procesados++;										// Incremento la cantidad de bytes a procesar
 		canal->dato_pendiente = NO;											// Bajo el flag de dato pendiente
 
-		if(!Leer_Dato_Buffer(canal, canal->fp ))							// Extraigo un dato del buffer hacia el frame
+		if(!Leer_Dato_Buffer(canal, &canal->frame[canal->ind_fr]))							// Extraigo un dato del buffer hacia el frame
 		{
-			canal->fp++;													// Incremento el puntero
+// 			canal->fp++;													// Incremento el puntero
+//			if(canal->fp > canal->frame + FRAME_N)							// Si escribí el frame
+//							canal->fp = canal->frame;									// Vuelvo el puntero al inicio
 
-			if(canal->fp > canal->frame + FRAME_N)							// Si escribí el frame
-				canal->fp = canal->frame;									// Vuelvo el puntero al inicio
+			canal->ind_fr++;
+			if(canal->ind_fr >= FRAME_N)
+				canal->ind_fr = 0;
 
 			if(canal->bytes_no_procesados >= FRAME_N)						// Pregunto si ya ocupe un frame
 			{
@@ -274,7 +280,7 @@ int Tarea_Atender_Canal_Recepcion(T_Modbus*canal, T_Modbus*canal_envio)
  * 	@returns	COMPROBAR_PUNTERO_FRAME_ABAJO		El puntero está fuera de rango por debajo, lo seteo en el mayor valor
  *
  ************************************************************************************************************/
-
+/*
 __inline int8_t Comprobar_Puntero_Frame (T_Modbus*canal)
 {
 	if(canal->fp >= canal->frame + FRAME_N)									// Pregunto si el puntero no está por arriba del valor máximo
@@ -291,7 +297,7 @@ __inline int8_t Comprobar_Puntero_Frame (T_Modbus*canal)
 	
 	return COMPROBAR_PUNTERO_FRAME_OK;										// El puntero estaba en rango, no hago ninguna modificación	
 }
-
+*/
 /************************************************************************************************************
  *	@brief 		Incremento el valor del puntero al frame en forma circular.
  *
@@ -300,7 +306,7 @@ __inline int8_t Comprobar_Puntero_Frame (T_Modbus*canal)
  * 	@returns 	none
  *
  ************************************************************************************************************/
-
+/*
 __inline void Inc_Circular_Puntero_Frame (T_Modbus*canal)
 {
 	canal->fp++;															// Incremento el puntero
@@ -310,7 +316,7 @@ __inline void Inc_Circular_Puntero_Frame (T_Modbus*canal)
 
 	return;																	// Salgo sin señalizar nada
 }
-
+*/
 /************************************************************************************************************
  *	@brief 		Decremento el valor del puntero al frame en forma circular.
  *
@@ -319,7 +325,7 @@ __inline void Inc_Circular_Puntero_Frame (T_Modbus*canal)
  * 	@returns 	none
  *
  ************************************************************************************************************/
-
+/*
 __inline void Dec_Circular_Puntero_Frame (T_Modbus*canal)
 {
 	canal->fp--;															// Decremento el puntero
@@ -329,7 +335,7 @@ __inline void Dec_Circular_Puntero_Frame (T_Modbus*canal)
 
 	return;																	// Salgo sin señalizar	
 }
-
+*/
 /************************************************************************************************************
  *	@brief 		Escribe un dato en el frame, después incremento el puntero en forma circular.
  *
@@ -342,9 +348,17 @@ __inline void Dec_Circular_Puntero_Frame (T_Modbus*canal)
 
 __inline void Escribir_Byte_Frame(T_Modbus*canal, uint8_t dato_a_escribir)
 {
-	Comprobar_Puntero_Frame(canal);											// Compruebo si el puntero está en rango
-	*(canal->fp) = dato_a_escribir;											// Escribo el dato recibido
-	Inc_Circular_Puntero_Frame(canal);										// Incremento el puntero circularmente				
+	// Comprobar_Puntero_Frame(canal);											// Compruebo si el puntero está en rango
+	// *(canal->fp) = dato_a_escribir;											// Escribo el dato recibido
+	// Inc_Circular_Puntero_Frame(canal);										// Incremento el puntero circularmente
+
+	canal->frame[canal->ind_fr] = dato_a_escribir;
+
+	canal->ind_fr++;
+	if(canal->ind_fr >= FRAME_N)
+		canal->ind_fr = 0;
+
+
 	return;
 }
 
@@ -360,9 +374,13 @@ __inline void Escribir_Byte_Frame(T_Modbus*canal, uint8_t dato_a_escribir)
 
 __inline uint8_t Leer_Byte_Frame(T_Modbus*canal)
 {
-	Comprobar_Puntero_Frame(canal);											// Compruebo si el puntero está en rango
-	Dec_Circular_Puntero_Frame(canal);										// Incremento el puntero circularmente
-	return *(canal->fp);													// Retorno el dato leído
+	//Comprobar_Puntero_Frame(canal);											// Compruebo si el puntero está en rango
+	// Dec_Circular_Puntero_Frame(canal);										// Incremento el puntero circularmente
+
+	canal->ind_fr--;
+	if(canal->ind_fr < 0)	canal->ind_fr = FRAME_N - 1;
+
+	return (canal->frame[canal->ind_fr]);													// Retorno el dato leído
 }
 
 /************************************************************************************************************
@@ -396,15 +414,22 @@ int Cargar_Respuesta (T_Modbus*canal, T_Modo_Dato modo_dato)
 	t_uframe frame_respuesta;
 
 	frame_respuesta.campo_frame.d0 = (uint8_t) modo_dato;		// Cargo el dato correspondiente para señalar tipo de respuesta
+	frame_respuesta.campo_frame.d1 = (uint8_t) modo_dato;
 	frame_respuesta.campo_frame.cmd = canal->comando;			// Vuelvo a cargar el comando recibido
 	frame_respuesta.campo_frame.chk = Checksum(frame_respuesta.byte_frame, FRAME_N - 1);	// Calculo y guardo el checksum
-
+/*
 	Escribir_Byte_Frame(canal, frame_respuesta.campo_frame.chk);	// Cargo checksum
 	Escribir_Byte_Frame(canal, frame_respuesta.campo_frame.d0);		// Cargo dato
 	Escribir_Byte_Frame(canal, frame_respuesta.campo_frame.cmd);	// Cargo comando
+*/
 
-	canal->envio_activo = SI;									// Pongo en alto el flag de envío activo
-	canal->dato_pendiente = SI;									// Señalizo que el canal de envío está libre
+	Escribir_Dato_Buffer(canal, frame_respuesta.campo_frame.cmd);	// Cargo comando
+	Escribir_Dato_Buffer(canal, frame_respuesta.campo_frame.d1);		// Cargo dato
+	Escribir_Dato_Buffer(canal, frame_respuesta.campo_frame.d0);		// Cargo dato
+	Escribir_Dato_Buffer(canal, frame_respuesta.campo_frame.chk);	// Cargo checksum
+
+	canal->envio_activo = SI;										// Pongo en alto el flag de envío activo
+	canal->dato_pendiente = NO;										// Señalizo que el canal de envío está libre
 
 	return 0;
 }
@@ -454,7 +479,7 @@ int Enviar_Dato (T_Modbus*canal, uint8_t dato)
 
 int Analizar_Frame(T_Modbus*canal, T_Modbus*canal_envio)
 {
-	t_uframe frame_extraido;
+	t_uframe frame_extraido;												// Asocio temporal el frame recibido
 
 	frame_extraido.campo_frame.chk = Leer_Byte_Frame (canal);				// Leo el byte de CRC
 	frame_extraido.campo_frame.d0  = Leer_Byte_Frame (canal);				// Leo el byte de D0
@@ -467,28 +492,23 @@ int Analizar_Frame(T_Modbus*canal, T_Modbus*canal_envio)
 		{																	// En caso verdadero
 			terminal.Estado_Comando = COMANDO_PENDIENTE;					// Levanto flag de comando pendiente
 			
-			////////////////////////////////////////////////////////////////////////////////////
-			////////////////////////////////////////////////////////////////////////////////////
-			////////////			ENVIO SOBRE EL CANAL DE TRANSMISIÓN				////////////			
-			////////////////////////////////////////////////////////////////////////////////////
-			////////////////////////////////////////////////////////////////////////////////////
-
-			canal_envio->comando = (t_Byte_Cmd) frame_extraido.campo_frame.cmd;				// Copio el frame recibido al canal
+			canal_envio->comando = (t_Byte_Cmd) frame_extraido.campo_frame.cmd;		// Copio el frame recibido al canal
 			Cargar_Respuesta(canal_envio, DATO_RECEPCION_OK);						// Cargo la respuesta para que sea enviada
-			
-			
-			return ANALIZAR_FRAME_PAQUETE_OK;								// Señalizo que recibí OK
+			terminal.Comando = (T_Modos) canal_envio->comando;						// Cargo comando a la terminal para ser analizado
+			terminal.Estado_Comando = COMANDO_PENDIENTE;							// Señalizo comando pendiente
+
+			return ANALIZAR_FRAME_PAQUETE_OK;										// Señalizo que recibí OK
 		}
-		else																// En caso que el comando no sea válido
-		{																	//
-			Cargar_Respuesta(canal, DATO_ERROR_DES);						// Error de comando desconocido
-			return ANALIZAR_FRAME_ERROR_DES;								// Señalizo el error
+		else																		// En caso que el comando no sea válido
+		{																			//
+			Cargar_Respuesta(canal, DATO_ERROR_DES);								// Error de comando desconocido
+			return ANALIZAR_FRAME_ERROR_DES;										// Señalizo el error
 		}
 	}
 	else
 	{
-		Cargar_Respuesta(canal, DATO_ERROR_CHK);
-		return ANALIZAR_FRAME_ERROR_CHECKSUM;
+		Cargar_Respuesta(canal_envio, DATO_ERROR_CHK);								// Recibí de la PC con error de checksum
+		return ANALIZAR_FRAME_ERROR_CHECKSUM;										// Retorno valor de error de checksum
 	}
 
 }

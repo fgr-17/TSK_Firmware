@@ -202,11 +202,13 @@ __inline int Escribir_Dato_Buffer_INLINE (T_Modbus*canal, uint8_t dato_a_escribi
 
 	canal->buffer[canal->i_fr] = dato_a_escribir;				// Escribo el dato en el frente
 	canal->i_fr++;												// Incremento el puntero del frente
+	canal->dato_pendiente = SI;									// Levanto flag de dato pendiente
+	canal->estado_buffer = BUFFER_CARGANDO;						// Señalizo buffer cargando
 
 	if(canal->i_fr >= BUFFER_N)									// Pregunto si el puntero del frente llegó al final
 		canal->i_fr = 0;										// Lo inicializo al comienzo
 
-	if(canal->i_fo >= canal->i_fr)								// Si los índices son iguales
+	if(canal->i_fo == canal->i_fr)								// Si los índices son iguales
 		canal->estado_buffer = BUFFER_LLENO;					// es porque el buffer está lleno
 
 	return ESCRIBIR_DATO_OK;
@@ -313,7 +315,7 @@ __interrupt void USCI_A1_ISR(void)
 		if(canal_rx_2.ind > canal_rx_2.len_cadena) 
 			canal_rx_2.ind = 0;															// Si me pase del largo del array, inicializo
 						
-		canal_rx_2.frame_temp[canal_rx_2.ind] = rx;										// Escribo en el buffer de recepcion
+		//canal_rx_2.frame_temp[canal_rx_2.ind] = rx;										// Escribo en el buffer de recepcion
 
 		canal_rx_2.ind++;																// Incremento el índice del buffer
 		
@@ -328,7 +330,7 @@ __interrupt void USCI_A1_ISR(void)
 			canal_rx_2.estado_buffer = BUFFER_LLENO;									// Queda en estado Leer
 			for(i = 0;i < canal_rx_2.len_cadena; i++)									// Recorro el array temporal
 			{
-				canal_rx_2.frame[i] = canal_rx_2.frame_temp[i]; 						// descargo todo sobre el buffer definitivo
+				//canal_rx_2.frame[i] = canal_rx_2.frame_temp[i]; 						// descargo todo sobre el buffer definitivo
 			} 			
 		}
 		break;

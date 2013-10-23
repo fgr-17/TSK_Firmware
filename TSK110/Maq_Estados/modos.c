@@ -1020,10 +1020,13 @@ int Modos_Maq_Estados(void)
  * @return	0 -> no hizo nada																				*
  * @return  1 -> mandé los datos!																			*
  ************************************************************************************************************/
+#define TAG_HORA_MASCARA		0x40
+#define TAG_FECHA_MASCARA		0x80
 
 inline int Leer_y_Enviar_Hora_y_Fecha(void)
 {
 	T_Bytes_a_Word anio;
+	uint8_t frame_temp [LARGO_FRAME];
 	
 	if((lectura_registros_RTC == FALSE)&&(canal_tx_0.estado_buffer == BUFFER_VACIO))// Espero a que el flag esté en FALSE para poder leer los registros
 	{
@@ -1032,30 +1035,44 @@ inline int Leer_y_Enviar_Hora_y_Fecha(void)
 		if (modo_enviar_f_y_h == ENVIAR_FECHA)
 		{
 			anio.word = RTCYEAR;
-			
-			modo_enviar_f_y_h = ENVIAR_HORA;	
-			
-			cadena_hora[0] = '/';
-			cadena_hora[1] = RTCDAY;												// cargo la hora en el buffer
-			cadena_hora[2] = RTCMON;												// cargo el minuto en el buffer		
-			cadena_hora[3] = anio.bytes[0];											// cargo los segundos en el buffer
-			cadena_hora[4] = anio.bytes[1];											// cargo los segundos en el buffer
+
+			frame_temp[0] = RTCDAY;												// cargo la hora en el buffer
+			frame_temp[1] = RTCMON;												// cargo el minuto en el buffer
+			frame_temp[2] = anio.bytes[1];										// cargo los segundos en el buffer
+			frame_temp[0] |= TAG_FECHA_MASCARA;									// Agrego la máscara del tag para fecha.
+			frame_temp[3] = Checksum(frame_temp, LARGO_FRAME - 1);				// Guardo checksum
+
+			modo_enviar_f_y_h = ENVIAR_HORA;									// Paso el modo de envío de hora
+
+			Escribir_Byte_Frame(canal_tx_0, frame_temp[0]);						// Escribo el primer frame a enviar
+			Escribir_Byte_Frame(canal_tx_0, frame_temp[1]);						// Escribo el 2do frame a enviar
+			Escribir_Byte_Frame(canal_tx_0, frame_temp[2]);						// Escribo el 3er frame a enviar
+			Escribir_Byte_Frame(canal_tx_0, frame_temp[3]);						// Escribo el 4to frame a enviar
+
 		}
 		else if(modo_enviar_f_y_h == ENVIAR_HORA)
 		{
-			cadena_hora[0] = '-';
-			cadena_hora[1] = hour_BCD;												// cargo la hora en el buffer
-			cadena_hora[2] = min_BCD;												// cargo el minuto en el buffer		
-			cadena_hora[3] = sec_BCD;												// cargo los segundos en el buffer
-			if((hour_BCD == 0x00)&&(min_BCD == 0x00)&&(sec_BCD == 0x00))			// si cambio de dia
-				modo_enviar_f_y_h = ENVIAR_FECHA;									// vuelvo a mandar la fecha
+			frame_temp[0] = hour_BCD;											// cargo la hora en el buffer
+			frame_temp[1] = min_BCD;											// cargo el minuto en el buffer
+			frame_temp[2] = sec_BCD;											// cargo los segundos en el buffer
+			frame_temp[0] |= TAG_HORA_MASCARA;									// Agrego tag para hora
+			frame_temp[3] = Checksum(frame_temp, LARGO_FRAME - 1);				// Guardo checksum
+
+			if((hour_BCD == 0x00)&&(min_BCD == 0x00)&&(sec_BCD == 0x00))		// si cambio de dia
+				modo_enviar_f_y_h = ENVIAR_FECHA;								// vuelvo a mandar la fecha
+
+			Escribir_Byte_Frame(canal_tx_0, frame_temp[0]);						// Escribo el primer frame a enviar
+			Escribir_Byte_Frame(canal_tx_0, frame_temp[1]);						// Escribo el 2do frame a enviar
+			Escribir_Byte_Frame(canal_tx_0, frame_temp[2]);						// Escribo el 3er frame a enviar
+			Escribir_Byte_Frame(canal_tx_0, frame_temp[3]);						// Escribo el 4to frame a enviar
+
 		}
 		else
 		{
 			modo_enviar_f_y_h = ENVIAR_FECHA;									// vuelvo a mandar la fecha
 		}
 		
-		canal_tx_0.respuesta = RESPONDER_HORA;										// Levanto el flag para responder
+		canal_tx_0.respuesta = RESPONDER_HORA;									// Levanto el flag para responder
 		return 1;
 	}
 	else

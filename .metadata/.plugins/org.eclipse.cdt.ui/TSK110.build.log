@@ -7,168 +7,23 @@ C:\ti\ccsv5\utils\bin\gmake -k all
 "C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="main.pp"  "../main.c"
 'Finished building: ../main.c'
 ' '
-'Building file: ../inc/funciones_arrays.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="inc/funciones_arrays.pp" --obj_directory="inc"  "../inc/funciones_arrays.c"
-'Finished building: ../inc/funciones_arrays.c'
-' '
-'Building file: ../XBOB_4/xbob_4.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="XBOB_4/xbob_4.pp" --obj_directory="XBOB_4"  "../XBOB_4/xbob_4.c"
-"../XBOB_4/xbob_4.c", line 176: warning: variable "alarma_master" was set but never used
-"../XBOB_4/xbob_4.c", line 177: warning: variable "alarma_slave" was set but never used
-'Finished building: ../XBOB_4/xbob_4.c'
-' '
-'Building file: ../UART/uart.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="UART/uart.pp" --obj_directory="UART"  "../UART/uart.c"
-"../UART/uart.c", line 214: error: struct "<unnamed>" has no field "ind_bf"
-"../UART/uart.c", line 215: error: struct "<unnamed>" has no field "ind_bf"
-"../UART/uart.c", line 218: error: struct "<unnamed>" has no field "ind_bf"
-3 errors detected in the compilation of "../UART/uart.c".
+'Building target: Modulo_RS232.out'
+'Invoking: MSP430 Linker'
+"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal -z -m"Modulo_RS232.map" --stack_size=160 --heap_size=160 --use_hw_mpy=F5 --warn_sections -i"C:/ti/ccsv5/ccs_base/msp430/include" -i"C:/ti/ccsv5/tools/compiler/msp430/lib" -i"C:/ti/ccsv5/tools/compiler/msp430/include" --reread_libs --rom_model -o "Modulo_RS232.out"  "./ADC/adc.obj" "./DMA/dma.obj" "./F5xx_F6xx_Core_Lib/HAL_UCS.obj" "./F5xx_F6xx_Core_Lib/HAL_TLV.obj" "./F5xx_F6xx_Core_Lib/HAL_RTC.obj" "./F5xx_F6xx_Core_Lib/HAL_PMM.obj" "./F5xx_F6xx_Core_Lib/HAL_PMAP.obj" "./F5xx_F6xx_Core_Lib/HAL_FLASH.obj" "./FatFs/mmc.obj" "./FatFs/ff.obj" "./Flash/flash_mapeo_variables.obj" "./Flash/flash.obj" "./Hardware/hardware_macros.obj" "./Hardware/hardware_drivers.obj" "./Log/log.obj" "./MSP-EXP430F5529_HAL/HAL_SDCard.obj" "./MSP-EXP430F5529_HAL/HAL_Board.obj" "./Maq_Estados/modos.obj" "./Maq_Estados/calibrar_temperatura.obj" "./Medicion_Sensores/Sensores/sensores.obj" "./Medicion_Sensores/Sensores/Temperatura.obj" "./Medicion_Sensores/Sensores/Conductividad.obj" "./Medicion_Sensores/dsp/dsp.obj" "./PWM/pwm.obj" "./SD_Card/SD_Card.obj" "./StrBus/strbus.obj" "./Timer_A0/Timer_A0.obj" "./Timer_A2/Timer_A2.obj" "./UART/uart.obj" "./XBOB_4/xbob_4.obj" "./inc/funciones_arrays.obj" "./main.obj" -l"libc.a" "../lnk_msp430f5529.cmd" 
+<Linking>
+
+ undefined           first referenced       
+  symbol                 in file            
+ ---------           ----------------       
+ Escribir_Byte_Frame ./Maq_Estados/modos.obj
+ cadena_datos        ./Maq_Estados/modos.obj
+
+error: unresolved symbols remain
+error: output file "Modulo_RS232.out" exceeds code size limit
+error: errors encountered during linking; "Modulo_RS232.out" not built
 
 >> Compilation failure
-gmake: *** [UART/uart.obj] Error 1
-'Building file: ../Timer_A2/Timer_A2.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="Timer_A2/Timer_A2.pp" --obj_directory="Timer_A2"  "../Timer_A2/Timer_A2.c"
-'Finished building: ../Timer_A2/Timer_A2.c'
-' '
-'Building file: ../Timer_A0/Timer_A0.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="Timer_A0/Timer_A0.pp" --obj_directory="Timer_A0"  "../Timer_A0/Timer_A0.c"
-'Finished building: ../Timer_A0/Timer_A0.c'
-' '
-'Building file: ../StrBus/strbus.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="StrBus/strbus.pp" --obj_directory="StrBus"  "../StrBus/strbus.c"
-'Finished building: ../StrBus/strbus.c'
-' '
-'Building file: ../SD_Card/SD_Card.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="SD_Card/SD_Card.pp" --obj_directory="SD_Card"  "../SD_Card/SD_Card.c"
-'Finished building: ../SD_Card/SD_Card.c'
-' '
-'Building file: ../PWM/pwm.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="PWM/pwm.pp" --obj_directory="PWM"  "../PWM/pwm.c"
-'Finished building: ../PWM/pwm.c'
-' '
-'Building file: ../Medicion_Sensores/dsp/dsp.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="Medicion_Sensores/dsp/dsp.pp" --obj_directory="Medicion_Sensores/dsp"  "../Medicion_Sensores/dsp/dsp.c"
-'Finished building: ../Medicion_Sensores/dsp/dsp.c'
-' '
-'Building file: ../Medicion_Sensores/Sensores/Conductividad.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="Medicion_Sensores/Sensores/Conductividad.pp" --obj_directory="Medicion_Sensores/Sensores"  "../Medicion_Sensores/Sensores/Conductividad.c"
-'Finished building: ../Medicion_Sensores/Sensores/Conductividad.c'
-' '
-'Building file: ../Medicion_Sensores/Sensores/Temperatura.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="Medicion_Sensores/Sensores/Temperatura.pp" --obj_directory="Medicion_Sensores/Sensores"  "../Medicion_Sensores/Sensores/Temperatura.c"
-'Finished building: ../Medicion_Sensores/Sensores/Temperatura.c'
-' '
-'Building file: ../Medicion_Sensores/Sensores/sensores.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="Medicion_Sensores/Sensores/sensores.pp" --obj_directory="Medicion_Sensores/Sensores"  "../Medicion_Sensores/Sensores/sensores.c"
-'Finished building: ../Medicion_Sensores/Sensores/sensores.c'
-' '
-'Building file: ../Maq_Estados/calibrar_temperatura.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="Maq_Estados/calibrar_temperatura.pp" --obj_directory="Maq_Estados"  "../Maq_Estados/calibrar_temperatura.c"
-'Finished building: ../Maq_Estados/calibrar_temperatura.c'
-' '
-'Building file: ../Maq_Estados/modos.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="Maq_Estados/modos.pp" --obj_directory="Maq_Estados"  "../Maq_Estados/modos.c"
-'Finished building: ../Maq_Estados/modos.c'
-' '
-'Building file: ../MSP-EXP430F5529_HAL/HAL_Board.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="MSP-EXP430F5529_HAL/HAL_Board.pp" --obj_directory="MSP-EXP430F5529_HAL"  "../MSP-EXP430F5529_HAL/HAL_Board.c"
-'Finished building: ../MSP-EXP430F5529_HAL/HAL_Board.c'
-' '
-'Building file: ../MSP-EXP430F5529_HAL/HAL_SDCard.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="MSP-EXP430F5529_HAL/HAL_SDCard.pp" --obj_directory="MSP-EXP430F5529_HAL"  "../MSP-EXP430F5529_HAL/HAL_SDCard.c"
-'Finished building: ../MSP-EXP430F5529_HAL/HAL_SDCard.c'
-' '
-'Building file: ../Log/log.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="Log/log.pp" --obj_directory="Log"  "../Log/log.c"
-'Finished building: ../Log/log.c'
-' '
-'Building file: ../Hardware/hardware_drivers.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="Hardware/hardware_drivers.pp" --obj_directory="Hardware"  "../Hardware/hardware_drivers.c"
-'Finished building: ../Hardware/hardware_drivers.c'
-' '
-'Building file: ../Hardware/hardware_macros.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="Hardware/hardware_macros.pp" --obj_directory="Hardware"  "../Hardware/hardware_macros.c"
-'Finished building: ../Hardware/hardware_macros.c'
-' '
-'Building file: ../Flash/flash.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="Flash/flash.pp" --obj_directory="Flash"  "../Flash/flash.c"
-'Finished building: ../Flash/flash.c'
-' '
-'Building file: ../Flash/flash_mapeo_variables.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="Flash/flash_mapeo_variables.pp" --obj_directory="Flash"  "../Flash/flash_mapeo_variables.c"
-'Finished building: ../Flash/flash_mapeo_variables.c'
-' '
-'Building file: ../FatFs/ff.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="FatFs/ff.pp" --obj_directory="FatFs"  "../FatFs/ff.c"
-'Finished building: ../FatFs/ff.c'
-' '
-'Building file: ../FatFs/mmc.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="FatFs/mmc.pp" --obj_directory="FatFs"  "../FatFs/mmc.c"
-'Finished building: ../FatFs/mmc.c'
-' '
-'Building file: ../F5xx_F6xx_Core_Lib/HAL_FLASH.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="F5xx_F6xx_Core_Lib/HAL_FLASH.pp" --obj_directory="F5xx_F6xx_Core_Lib"  "../F5xx_F6xx_Core_Lib/HAL_FLASH.c"
-'Finished building: ../F5xx_F6xx_Core_Lib/HAL_FLASH.c'
-' '
-'Building file: ../F5xx_F6xx_Core_Lib/HAL_PMAP.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="F5xx_F6xx_Core_Lib/HAL_PMAP.pp" --obj_directory="F5xx_F6xx_Core_Lib"  "../F5xx_F6xx_Core_Lib/HAL_PMAP.c"
-'Finished building: ../F5xx_F6xx_Core_Lib/HAL_PMAP.c'
-' '
-'Building file: ../F5xx_F6xx_Core_Lib/HAL_PMM.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="F5xx_F6xx_Core_Lib/HAL_PMM.pp" --obj_directory="F5xx_F6xx_Core_Lib"  "../F5xx_F6xx_Core_Lib/HAL_PMM.c"
-'Finished building: ../F5xx_F6xx_Core_Lib/HAL_PMM.c'
-' '
-'Building file: ../F5xx_F6xx_Core_Lib/HAL_RTC.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="F5xx_F6xx_Core_Lib/HAL_RTC.pp" --obj_directory="F5xx_F6xx_Core_Lib"  "../F5xx_F6xx_Core_Lib/HAL_RTC.c"
-'Finished building: ../F5xx_F6xx_Core_Lib/HAL_RTC.c'
-' '
-'Building file: ../F5xx_F6xx_Core_Lib/HAL_TLV.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="F5xx_F6xx_Core_Lib/HAL_TLV.pp" --obj_directory="F5xx_F6xx_Core_Lib"  "../F5xx_F6xx_Core_Lib/HAL_TLV.c"
-'Finished building: ../F5xx_F6xx_Core_Lib/HAL_TLV.c'
-' '
-'Building file: ../F5xx_F6xx_Core_Lib/HAL_UCS.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="F5xx_F6xx_Core_Lib/HAL_UCS.pp" --obj_directory="F5xx_F6xx_Core_Lib"  "../F5xx_F6xx_Core_Lib/HAL_UCS.c"
-'Finished building: ../F5xx_F6xx_Core_Lib/HAL_UCS.c'
-' '
-'Building file: ../DMA/dma.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="DMA/dma.pp" --obj_directory="DMA"  "../DMA/dma.c"
-'Finished building: ../DMA/dma.c'
-' '
-'Building file: ../ADC/adc.c'
-'Invoking: MSP430 Compiler'
-"C:/ti/ccsv5/tools/compiler/msp430/bin/cl430" -vmspx -g -O0 --define=__MSP430F5529__ --include_path="C:/ti/ccsv5/ccs_base/msp430/include" --include_path="C:/Documents and Settings/fede/Mis documentos/TSK100/Firmware_rep/Repo/TSK110" --include_path="C:/ti/ccsv5/tools/compiler/msp430/include" --diag_warning=225 --silicon_errata=CPU22 --silicon_errata=CPU21 --silicon_errata=CPU23 --silicon_errata=CPU40 --printf_support=minimal --preproc_with_compile --preproc_dependency="ADC/adc.pp" --obj_directory="ADC"  "../ADC/adc.c"
-'Finished building: ../ADC/adc.c'
-' '
+gmake: *** [Modulo_RS232.out] Error 1
 gmake: Target `all' not remade because of errors.
 
 **** Build Finished ****

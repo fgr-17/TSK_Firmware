@@ -27,12 +27,18 @@
 //									CONSTANTES GENERALES									//
 //////////////////////////////////////////////////////////////////////////////////////////////
  
-#define CANT_BYTES_TAG						1												// Cantidad de bytes usados para tag
-#define CANT_BYTES_BUFFER 					5												// Cantidad de bytes de información y pre/sufijos
-#define CANT_BYTES_CRC						2												// Cantidad de bytes del CRC
-#define LARGO_FRAME							(CANT_BYTES_BUFFER + CANT_BYTES_CRC)			// Cantidad total de bytes del frame
+// #define CANT_BYTES_TAG						1												// Cantidad de bytes usados para tag
+// #define CANT_BYTES_BUFFER 					4												// Cantidad de bytes de información y pre/sufijos
+// #define CANT_BYTES_CRC						2												// Cantidad de bytes del CRC
+// #define LARGO_FRAME							(CANT_BYTES_BUFFER + CANT_BYTES_CRC)			// Cantidad total de bytes del frame
 
-#define LARGO_BUFFER_FRAME 					30												// Longitud total del buffer
+#define CANT_BYTES_TAG						1												// Cantidad de bytes usados para tag
+#define CANT_BYTES_BUFFER 					2												// Cantidad de bytes de información y pre/sufijos
+#define CANT_BYTES_CHK						1												// Cantidad de bytes de checksum
+#define LARGO_FRAME							(CANT_BYTES_BUFFER + CANT_BYTES_CHK)			// Cantidad total de bytes del frame
+
+
+// #define LARGO_BUFFER_FRAME 					30												// Longitud total del buffer
 #define BYTES_STREAM_ARCHIVO				11												// [h][m][s][k1|k1][t1|t1][k2|k2][t2|t2]
 
 #define FRAME_N								4												// 4 bytes de frame: [CMD][D1][D0][CRC]
@@ -271,7 +277,7 @@ typedef enum {
 			} T_Uart;	
 
 
-#define CAMPOS_N	3
+#define CAMPOS_N	4
 
 typedef struct{
 	uint8_t cmd;
@@ -299,7 +305,7 @@ typedef union
 
 #define CMD_N				26														// Cantidad de comandos definidos
 
-#define CMD_OFFSET			0x0F													// Offset inicial del orden de los comandos
+#define CMD_OFFSET			0x07													// Offset inicial del orden de los comandos
 
 typedef enum {
 			ESTAS = CMD_OFFSET, 													// Inicio de la comunicación
@@ -349,7 +355,7 @@ typedef enum {
 typedef struct 
 {
 //	uint8_t				frame  [LARGO_BUFFER_FRAME];
-	uint8_t				frame_temp[LARGO_BUFFER_FRAME];
+//	uint8_t				frame_temp[LARGO_BUFFER_FRAME];
 	
 	uint8_t 			ind;
 
@@ -378,11 +384,11 @@ typedef struct
 	// CAMPOS NUEVOS DESD TSK110
 	t_bool				dato_pendiente;								// Flag de dato pendiente
 	t_bool				envio_activo;								// Flag de envío
-	uint8_t				bytes_no_procesados;
+	uint8_t				bytes_no_procesados;						// Bytes acumulados para procesar
 
 	uint8_t				frame [FRAME_N];							// Frame de procesamiento
-	uint8_t				ind_fr;										// Indice del frame
-	uint8_t*			fp;											// Puntero al frame
+	int8_t				ind_fr;										// Indice del frame
+	// uint8_t*			fp;											// Puntero al frame
 
 	uint8_t				buffer [BUFFER_N];							// Buffer de recepción
 	// uint8_t				ind_bf;										// Indice del buffer
@@ -397,7 +403,8 @@ typedef struct
 typedef struct
 {
 	T_Nro_Terminal 			Direccion_Equipo;
-	T_Modos					Comando;
+	// T_Modos					Comando;
+	t_Byte_Cmd				Comando;
 	T_estado_cmd			Estado_Comando;	
 	T_Modos_Estados 		modos_estado;
 	T_Terminal_Med			medicion;
@@ -460,6 +467,7 @@ extern uint16_t CRC16 (const uint8_t *nData, uint16_t wLength);
 extern int Tarea_Atender_Canal_Transmision (T_Modbus*canal);
 extern int Tarea_Atender_Canal_Recepcion(T_Modbus*canal, T_Modbus*canal_envio);
 
+extern uint8_t Checksum (uint8_t *ptr, uint8_t sz);
 
 /****************************************************
  * 				Variables globales 					*

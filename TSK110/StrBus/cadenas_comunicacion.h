@@ -16,10 +16,8 @@
 
 #define N_CADENA_CMD		26
 
+const uint8_t lista_de_comandos[N_CADENA_CMD][CANT_BYTES_BUFFER]/* = {
 
-
-const uint8_t lista_de_comandos[N_CADENA_CMD][CANT_BYTES_BUFFER] = {
-	
 	"estas",						// Inicio de la comunicación				
 
 	"confi",						// Modo de configuración
@@ -55,9 +53,9 @@ const uint8_t lista_de_comandos[N_CADENA_CMD][CANT_BYTES_BUFFER] = {
 	"finre", 						// Finalizo al Master como repetidor
 	
 	"dummy",
-	
-};
 
+}*/;
+/*
 const uint8_t cadena_estoy [CANT_BYTES_BUFFER] = "estoy";									// Comienzo la comunicación
 const uint8_t cadena_error_crc [CANT_BYTES_BUFFER] = "ercrc";								// El frame traía un error de CRC
 const uint8_t cadena_error_cmd [CANT_BYTES_BUFFER] = "ercmd";								// El frame no tenía errores pero el comando no es válido
@@ -76,7 +74,7 @@ uint8_t cadena_conductividad[CANT_BYTES_BUFFER] = "K---K";									// Envío el v
 uint8_t cadena_datos[CANT_BYTES_BUFFER] = "d----";											// Envío de datos en gral.
 
 char cadena_archivos[LARGO_BUFFER_FRAME];													// Envío nombres de archivo a descargar
-
+*/
 #endif /*CADENAS_COMUNICACION_H_*/
 
 /******************************************************************************************** 	
