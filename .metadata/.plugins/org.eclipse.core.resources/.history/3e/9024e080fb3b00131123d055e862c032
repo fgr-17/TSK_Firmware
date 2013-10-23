@@ -232,8 +232,7 @@ int Modos_Maq_Estados(void)
 		}
 		else																// En caso de que no tenga ningún comando pendiente
 		{			// pregunto si la terminal está conectada y si no tiene nada que responder
-			// if((terminal.estado_com == TERMINAL_CONECTADA)&&(canal_tx_0.respuesta == NO_RESPONDER))
-			if((terminal.estado_com == TERMINAL_CONECTADA)&&(canal_tx_0.envio_activo == FALSE))
+			if((terminal.estado_com == TERMINAL_CONECTADA)&&(canal_tx_0.respuesta == NO_RESPONDER))	
 				Leer_y_Enviar_Hora_y_Fecha();								// Envío hora y fecha e info del equipo.
 		}		
 		break;

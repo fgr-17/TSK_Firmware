@@ -493,10 +493,10 @@ int Analizar_Frame(T_Modbus*canal, T_Modbus*canal_envio)
 			terminal.Estado_Comando = COMANDO_PENDIENTE;					// Levanto flag de comando pendiente
 			
 			canal_envio->comando = (t_Byte_Cmd) frame_extraido.campo_frame.cmd;		// Copio el frame recibido al canal
+			Cargar_Respuesta(canal_envio, DATO_RECEPCION_OK);						// Cargo la respuesta para que sea enviada
 			terminal.Comando = (T_Modos) canal_envio->comando;						// Cargo comando a la terminal para ser analizado
 			terminal.Estado_Comando = COMANDO_PENDIENTE;							// Señalizo comando pendiente
 			terminal.estado_com = TERMINAL_CONECTADA;
-			Cargar_Respuesta(canal_envio, DATO_RECEPCION_OK);						// Cargo la respuesta para que sea enviada
 
 			return ANALIZAR_FRAME_PAQUETE_OK;										// Señalizo que recibí OK
 		}
